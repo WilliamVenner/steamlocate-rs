@@ -8,14 +8,17 @@ license = "MIT"
 keywords = ["steam", "installation", "game", "games", "directory", "dir", "appid", "app", "apps", "vdf", "acf", "appmanifest", "libraryfolders", "steamapps", "steamapp"]
 description = "Rust Crate for locating Steam game installation directories (and Steam itself!)"
 
+[features]
+steamid_ng = ["steamid-ng"]
+
 [dependencies]
 steamy-vdf = "0.2.0"
 anyhow = "1.*"
 regex = "1.*"
 lazy_static = "1.*"
-
-[target.'cfg(not(target_os="windows"))'.dependencies]
-dirs = "3.*"
+steamid-ng = { version = "*", optional = true }
 
 [target.'cfg(target_os="windows")'.dependencies]
 winreg = "0.*"
+[target.'cfg(not(target_os="windows"))'.dependencies]
+dirs = "3.*"

@@ -6,7 +6,11 @@ pub struct SteamApp {
 	pub path: PathBuf,
 	pub vdf: steamy_vdf::Table,
 	pub name: Option<String>,
-	pub last_user: Option<u64>
+	
+	#[cfg(not(feature="steamid_ng"))]
+	pub last_user: Option<u64>,
+	#[cfg(feature="steamid_ng")]
+	pub last_user: Option<steamid_ng::SteamID>
 }
 
 impl SteamApp {
@@ -25,8 +29,22 @@ impl SteamApp {
 			// Get the name key, try and convert it into a String, if we fail, name = None
 			name: vdf.get("name").and_then(|entry| entry.as_str().and_then(|str| Some(str.to_string()))),
 
-			// Get the LastOwner key, try and convert it into a u64 (SteamID64), if we fail, last_user = None
-			last_user: vdf.get("LastOwner").and_then(|entry| entry.as_value().and_then(|val| val.parse::<u64>().ok())),
+			// Get the LastOwner key, try and convert it into a SteamID64, if we fail, last_user = None
+			#[cfg(not(feature="steamid_ng"))]
+			last_user: vdf.get("LastOwner").and_then(
+				|entry| entry.as_value().and_then(
+					|val| val.parse::<u64>().ok()
+				)
+			),
+
+			#[cfg(feature="steamid_ng")]
+			last_user: vdf.get("LastOwner").and_then(
+				|entry| entry.as_value().and_then(
+					|val| val.parse::<u64>().ok().and_then(
+						|steamid64| Some(steamid_ng::SteamID::from(steamid64))
+					)
+				)
+			),
 		})
 	}
 }
