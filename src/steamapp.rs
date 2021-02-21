@@ -23,10 +23,11 @@ pub struct SteamApp {
 	pub appid: u32,
 
 	/// The path to the installation directory of this Steam app.
+	///
 	/// Example: `C:\Program Files (x86)\Steam\steamapps\common\GarrysMod`
 	pub path: PathBuf,
 
-	/// A [steamy_vdf::Table](/steamy-vdf/*/steamy_vdf/struct.Table.html)
+	/// A [steamy_vdf::Table](https://docs.rs/steamy-vdf/*/steamy_vdf/struct.Table.html)
 	pub vdf: steamy_vdf::Table,
 
 	/// The store name of the Steam app.
@@ -35,13 +36,13 @@ pub struct SteamApp {
 	#[cfg(not(feature="steamid_ng"))]
 	/// The SteamID64 of the last Steam user that played this game on the filesystem.
 	///
-	/// This crate supports [steamid-ng](/steamid-ng) and can automatically convert this to a [SteamID](/steamid-ng/*/steamid-ng/struct.SteamID.html) for you.
+	/// This crate supports [steamid-ng](https://docs.rs/steamid-ng) and can automatically convert this to a [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) for you.
 	///
-	/// To enable this feature, build with `cargo build --features steamid_ng`
+	/// To enable this support, [use the  `steamid_ng` Cargo.toml feature](https://docs.rs/steamlocate/*/steamlocate#using-steamlocate).
 	pub last_user: Option<u64>,
 
 	#[cfg(feature="steamid_ng")]
-	/// The [SteamID](/steamid-ng/*/steamid-ng/struct.SteamID.html) of the last Steam user that played this game on the filesystem.
+	/// The [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) of the last Steam user that played this game on the filesystem.
 	pub last_user: Option<steamid_ng::SteamID>
 }
 

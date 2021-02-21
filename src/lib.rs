@@ -2,19 +2,36 @@
 //!
 //! **This crate supports Windows, macOS and Linux.**
 //!
+//! # Using steamlocate
+//! Simply add to your [Cargo.toml](https://doc.rust-lang.org/cargo/reference/manifest.html) file:
+//! ```toml
+//! [dependencies]
+//! steamlocate = "0.*"
+//! ```
+//!
+//! To use [steamid-ng](#steamid-ng-support) with steamlocate, add this to your [Cargo.toml](https://doc.rust-lang.org/cargo/reference/manifest.html) file:
+//! ```toml
+//! [dependencies]
+//! steamid-ng = "1.*"
+//!
+//! [dependencies.steamlocate]
+//! version = "0.*"
+//! features = ["steamid_ng"]
+//! ```
+//!
 //! # Caching
 //! All functions in this crate cache their results, meaning you can call them as many times as you like and they will always return the same reference.
 //!
-//! If you need to get uncached results, simply instantiate a new [SteamDir](struct.SteamDir.html).
+//! If you need to get uncached results, simply instantiate a new [SteamDir](https://docs.rs/steamlocate/*/steamlocate/struct.SteamDir.html).
 //!
 //! # steamid-ng Support
-//! This crate supports [steamid-ng](/steamid-ng) and can automatically convert [SteamApp::last_user](struct.SteamApp.html#structfield.last_user) to a [SteamID](/steamid-ng/*/steamid-ng/struct.SteamID.html) for you.
+//! This crate supports [steamid-ng](https://docs.rs/steamid-ng) and can automatically convert [SteamApp::last_user](struct.SteamApp.html#structfield.last_user) to a [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) for you.
 //!
-//! To enable this feature, build with `cargo build --features steamid_ng`
+//! To enable this support, [use the  `steamid_ng` Cargo.toml feature](#using-steamlocate).
 //!
 //! # Examples
 //!
-//! ## Locate the installed Steam directory
+//! ### Locate the installed Steam directory
 //! ```rust
 //! extern crate steamlocate;
 //! use steamlocate::SteamDir;
@@ -30,7 +47,7 @@
 //! )
 //! ```
 //!
-//! ## Locate an installed Steam app by its app ID
+//! ### Locate an installed Steam app by its app ID
 //! This will locate Garry's Mod anywhere on the filesystem.
 //! ```rust
 //! extern crate steamlocate;
@@ -48,11 +65,11 @@
 //! 	path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
 //! 	vdf: <steamy_vdf::Table>,
 //! 	name: Some(String: "Garry's Mod"),
-//! 	last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
+//! 	last_user: Some(u64: 76561198040894045)
 //! )
 //! ```
 //!
-//! ## Locate all Steam apps on this filesystem
+//! ### Locate all Steam apps on this filesystem
 //! ```rust
 //! extern crate steamlocate;
 //! use steamlocate::{SteamDir, SteamApp};
@@ -70,13 +87,13 @@
 //! 		path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
 //! 		vdf: <steamy_vdf::Table>,
 //! 		name: Some(String: "Garry's Mod"),
-//! 		last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
+//! 		last_user: Some(u64: 76561198040894045)
 //! 	)
 //! 	...
 //! }
 //! ```
 //!
-//! ## Locate all Steam library folders
+//! ### Locate all Steam library folders
 //! ```rust
 //! extern crate steamlocate;
 //! use steamlocate::{SteamDir, LibraryFolders};
@@ -90,12 +107,12 @@
 //! ```
 //! ```ignore
 //! {
-//!		"C:\\Program Files (x86)\\Steam\\steamapps",
-//!		"D:\\Steam\\steamapps",
-//!		"E:\\Steam\\steamapps",
-//!		"F:\\Steam\\steamapps",
-//!		...
-//!	}
+//! 	"C:\\Program Files (x86)\\Steam\\steamapps",
+//! 	"D:\\Steam\\steamapps",
+//! 	"E:\\Steam\\steamapps",
+//! 	"F:\\Steam\\steamapps",
+//! 	...
+//! }
 //! ```
 
 #[macro_use] extern crate lazy_static;
@@ -159,7 +176,7 @@ impl SteamDir {
 
 	/// Returns a reference to `HashMap<u32, Option<SteamApp>>` of all `SteamApp`s located on this computer.
 	///
-	/// All `Option<SteamApp>` in this context will be `Some`, so you can safely `unwrap()` them without panicking.
+	/// All `Option<SteamApp>`s in this context will be `Some`, so you can safely `unwrap()` them without panicking.
 	///
 	/// This function will cache its results and will always return a reference to the same `HashMap`.
 	/// # Example
@@ -196,7 +213,7 @@ impl SteamDir {
 	///
 	/// If the Steam app is not installed on the system, this will return `None`.
 	///
-	/// This function will cache its (either Some and None) result and will always return a reference to the same `SteamApp`.
+	/// This function will cache its (either `Some` and `None`) result and will always return a reference to the same `SteamApp`.
 	///
 	/// # Example
 	/// ```rust

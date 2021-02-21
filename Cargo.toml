@@ -1,6 +1,6 @@
 [package]
 name = "steamlocate"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["William Venner <william@venner.io>"]
 edition = "2018"
 repository = "https://github.com/WilliamVenner/steamlocate-rs"
@@ -9,9 +9,6 @@ description = "Rust Crate for locating Steam game installation directories (and 
 readme = "README.md"
 keywords = ["steam", "vdf", "appmanifest", "directory", "steamapps"]
 categories = ["os", "hardware-support", "filesystem", "accessibility"]
-
-[badges]
-github = { repository = "WilliamVenner/steamlocate-rs" }
 
 [features]
 steamid_ng = ["steamid-ng"]

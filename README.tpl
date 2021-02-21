@@ -1,7 +1,7 @@
 [![crates.io](https://meritbadge.herokuapp.com/steamlocate)](https://crates.io/crates/steamlocate)
 [![docs.rs](https://docs.rs/steamlocate/badge.svg)](https://docs.rs/steamlocate/)
 [![license](https://img.shields.io/crates/l/steamlocate)](https://github.com/WilliamVenner/steamlocate/blob/master/LICENSE)
-{{badges}}
+[![Workflow Status](https://github.com/WilliamVenner/steamlocate-rs/workflows/build/badge.svg)](https://github.com/WilliamVenner/steamlocate-rs/actions?query=workflow%3A%22build%22)
 
 # {{crate}}
 
