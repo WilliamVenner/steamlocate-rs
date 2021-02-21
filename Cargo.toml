@@ -1,0 +1,21 @@
+[package]
+name = "steamlocate"
+version = "0.1.0"
+authors = ["William Venner <william@venner.io>"]
+edition = "2018"
+repository = "https://github.com/WilliamVenner/steamlocate-rs"
+license = "MIT"
+keywords = ["steam", "installation", "game", "games", "directory", "dir", "appid", "app", "apps", "vdf", "acf", "appmanifest", "libraryfolders", "steamapps", "steamapp"]
+description = "Rust Crate for locating Steam game installation directories (and Steam itself!)"
+
+[dependencies]
+steamy-vdf = "0.2.0"
+anyhow = "1.*"
+regex = "1.*"
+lazy_static = "1.*"
+
+[target.'cfg(not(target_os="windows"))'.dependencies]
+dirs = "3.*"
+
+[target.'cfg(target_os="windows")'.dependencies]
+winreg = "0.*"
