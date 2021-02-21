@@ -1,5 +1,9 @@
-// Steam must be installed and at least two library folders must be setup for the tests to succeed
-static APP_ID: u32 = 4000; // Specify a Steam app ID
+// Prerequisites:
+// * Steam must be installed
+// * At least two library folders must be setup
+// * At least two Steam apps must be installed
+// * An installed Steam game's app id must be specified below
+static APP_ID: u32 = 4000;
 
 use super::*;
 
@@ -7,7 +11,7 @@ use super::*;
 fn find_steam() {
 	let steamdir_found = SteamDir::locate();
 	assert!(steamdir_found.is_some());
-	println!("{:?}", steamdir_found.unwrap());
+	println!("{:#?}", steamdir_found.unwrap());
 }
 
 #[test]
@@ -20,7 +24,7 @@ fn find_library_folders() {
 	steamdir.libraryfolders.discover(&steamdir.path);
 	assert!(steamdir.libraryfolders.paths.len() > 1);
 
-	println!("{:?}", steamdir.libraryfolders.paths);
+	println!("{:#?}", steamdir.libraryfolders.paths);
 }
 
 #[test]
@@ -33,7 +37,7 @@ fn find_app() {
 	let steamapp = steamdir.get_app(&APP_ID);
 	assert!(steamapp.is_some());
 
-	println!("{:?}", steamapp.unwrap());
+	println!("{:#?}", steamapp.unwrap());
 }
 
 #[test]
@@ -48,4 +52,18 @@ fn app_details() {
 	
 	assert!(steamapp.unwrap().name.is_some());
 	assert!(steamapp.unwrap().last_user.is_some());
+}
+
+#[test]
+fn all_apps() {
+	let steamdir_found = SteamDir::locate();
+	assert!(steamdir_found.is_some());
+
+	let mut steamdir = steamdir_found.unwrap();
+	
+	let steamapp = steamdir.get_apps();
+	assert!(!steamapp.is_empty());
+	assert!(steamapp.keys().len() > 1);
+	
+	println!("{:#?}", steamapp);
 }
