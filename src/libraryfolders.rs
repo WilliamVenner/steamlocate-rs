@@ -1,8 +1,30 @@
 use std::path::PathBuf;
 
+/// An instance which contains all the Steam library folders installed on the file system.
+/// Example:
+/// ```rust
+/// # use std::{vec, path::PathBuf};
+/// # use steamlocate::{SteamDir, LibraryFolders};
+/// let mut steamdir: SteamDir = SteamDir::locate().unwrap();
+/// let libraryfolders: &LibraryFolders = steamdir.libraryfolders();
+/// let paths: &Vec<PathBuf> = &libraryfolders.paths;
+/// println!("{:#?}", paths);
+/// ```
+/// ```ignore
+/// {
+///		"C:\\Program Files (x86)\\Steam\\steamapps",
+///		"D:\\Steam\\steamapps",
+///		"E:\\Steam\\steamapps",
+///		"F:\\Steam\\steamapps",
+///		...
+///	}
+/// ```
 #[derive(Default, Clone, Debug)]
-pub(crate) struct LibraryFolders {
-	pub(crate) paths: Vec<PathBuf>,
+pub struct LibraryFolders {
+	/// A `Vec<PathBuf>` of Steam library folder paths.
+	///
+	/// This will always include the Steam installation directory's `SteamApps` folder.
+	pub paths: Vec<PathBuf>,
 	pub(crate) discovered: bool
 }
 

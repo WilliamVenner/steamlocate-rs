@@ -5,8 +5,13 @@ authors = ["William Venner <william@venner.io>"]
 edition = "2018"
 repository = "https://github.com/WilliamVenner/steamlocate-rs"
 license = "MIT"
-keywords = ["steam", "installation", "game", "games", "directory", "dir", "appid", "app", "apps", "vdf", "acf", "appmanifest", "libraryfolders", "steamapps", "steamapp"]
 description = "Rust Crate for locating Steam game installation directories (and Steam itself!)"
+readme = "README.md"
+keywords = ["steam", "installation", "game", "games", "directory", "dir", "appid", "app", "apps", "vdf", "acf", "appmanifest", "libraryfolders", "steamapps", "steamapp"]
+categories = ["os", "hardware-support", "filesystem", "accessibility"]
+
+[badges]
+github = { repository = "WilliamVenner/steamlocate-rs" }
 
 [features]
 steamid_ng = ["steamid-ng"]

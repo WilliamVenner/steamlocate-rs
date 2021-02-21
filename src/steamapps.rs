@@ -15,6 +15,8 @@ pub(crate) struct SteamApps {
 
 impl SteamApps {
 	pub(crate) fn discover_apps(&mut self, libraryfolders: &LibraryFolders) {
+		self.apps.drain();
+		
 		for libraryfolder in &libraryfolders.paths {
 			let read_dir = libraryfolder.read_dir();
 			if read_dir.is_err() { continue }
