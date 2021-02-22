@@ -115,6 +115,9 @@
 //! }
 //! ```
 
+#[cfg(not(any(target_os="windows", target_os="macos", target_os="linux")))]
+compile_error!("Unsupported operating system!");
+
 #[macro_use] extern crate lazy_static;
 
 use std::{collections::HashMap, path::PathBuf};
@@ -317,15 +320,6 @@ impl SteamDir {
 			})
 		}
 	}
-
-	/// UNSUPPORTED OPERATING SYSTEM! This will panic!
-	///
-	/// target_os must be `any(target_os="windows", target_os="macos", target_os="linux")`
-	#[cfg(not(any(target_os="windows", target_os="macos", target_os="linux")))]
-	pub fn locate() -> Option<SteamDir> {
-		panic!("Unsupported operating system");
-	}
-
 }
 
 #[cfg(test)]
