@@ -7,6 +7,8 @@
 
 A crate which efficiently locates any Steam application on the filesystem, and/or the Steam installation itself.
 
+This crate is best used when you do not want to depend on the Steamworks API for your program. In some cases the Steamworks API may be more appropriate to use, in which case I recommend the fantastic [steamworks](https://github.com/Thinkofname/steamworks-rs) crate. You don't need to be a Steamworks partner to get installation directory locations from the Steamworks API.
+
 **This crate supports Windows, macOS and Linux.**
 
 ## Using steamlocate
