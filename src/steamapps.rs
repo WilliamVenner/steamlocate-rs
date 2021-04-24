@@ -74,14 +74,9 @@ impl SteamApps {
 					SteamApp::new(&appmanifest_path, appmanifest_vdf.get("AppState")?.as_table()?)
 				);
 
-				return None
+				return Some(())
 			}
 		}
-
-		self.apps.insert(
-			*app_id,
-			None
-		);
 
 		None
 	}

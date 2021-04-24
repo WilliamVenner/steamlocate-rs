@@ -240,7 +240,12 @@ impl SteamDir {
 		if !steam_apps.apps.contains_key(app_id) {
 			let libraryfolders = &mut self.libraryfolders;
 			if !libraryfolders.discovered { libraryfolders.discover(&self.path); }
-			steam_apps.discover_app(libraryfolders, app_id);
+			if let None = steam_apps.discover_app(libraryfolders, app_id) {
+				steam_apps.apps.insert(
+					*app_id,
+					None
+				);
+			}
 		}
 
 		steam_apps.apps.get(app_id).unwrap().as_ref()
