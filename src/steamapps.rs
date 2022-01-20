@@ -1,11 +1,6 @@
-use regex::Regex;
 use crate::steamapp::SteamApp;
 use crate::libraryfolders::LibraryFolders;
 use std::collections::HashMap;
-
-lazy_static! {
-	static ref APPMANIFEST_RE: Regex = Regex::new(r"^appmanifest_(\d+)\.acf$").unwrap();
-}
 
 #[derive(Default, Clone, Debug)]
 pub(crate) struct SteamApps {
@@ -29,15 +24,15 @@ impl SteamApps {
 				let mut path = file.path();
 				if !path.is_file() { continue }
 
-				let app_id = match APPMANIFEST_RE.captures(&file.file_name().to_string_lossy()) {
+				let app_id: u32 = match file
+					.file_name()
+					.to_str()
+					.and_then(|name| name.strip_prefix("appmanifest_"))
+					.and_then(|prefixless_name| prefixless_name.strip_suffix(".acf"))
+					.and_then(|app_id_str| app_id_str.parse().ok())
+				{
+					Some(app_id) => app_id,
 					None => continue,
-					Some(captures) => match captures.get(1) {
-						None => continue,
-						Some(group) => match group.as_str().parse::<u32>() {
-							Err(_) => continue,
-							Ok(app_id) => app_id
-						}
-					}
 				};
 
 				let vdf = match steamy_vdf::load(&path) {
