@@ -1,4 +1,6 @@
-use std::path::PathBuf;
+use std::{path::{Path, PathBuf}, fs};
+
+use keyvalues_parser::Vdf;
 
 /// An instance which contains all the Steam library folders installed on the file system.
 /// Example:
@@ -29,41 +31,60 @@ pub struct LibraryFolders {
 }
 
 impl LibraryFolders {
-	pub(crate) fn discover(&mut self, path: &PathBuf) {
-		let steamapps = path.join("SteamApps");
+	/// Discovers all the steam libraries from `libraryfolders.vdf`
+	///
+	/// We want all the library paths from `libraryfolders.vdf` which has the following structure
+	///
+	/// ```vdf
+	/// "libraryfolders"
+	/// {
+	///     ...
+	///     "0"
+	///     {
+	///         "path"    "/path/to/first/library"
+	///         ...
+	///     }
+	///     "1"
+	///     {
+	///         "path"    "/path/to/second/library"
+	///         ...
+	///     }
+	///     ...
+	/// }
+	/// ```
+	pub(crate) fn discover(&mut self, path: &Path) {
+		let _ = self._discover(path);
+	}
+
+	fn _discover(&mut self, path: &Path) -> Option<()> {
+		let steamapps = path.join("steamapps");
 		self.paths.push(steamapps.clone());
 
 		let libraryfolders_vdf_path = steamapps.join("libraryfolders.vdf");
 		if libraryfolders_vdf_path.is_file() {
+			let vdf_text = fs::read_to_string(&libraryfolders_vdf_path).ok()?;
+			let value = Vdf::parse(&vdf_text).ok()?.value;
+			let obj = value.get_obj()?;
 
-			// Load LibraryFolders table
-			match
-				steamy_vdf::load(libraryfolders_vdf_path).as_ref()
+			let library_folders: Vec<_> = obj.iter().filter(|(key, values)| {
+				key.parse::<u32>().is_ok() && values.len() == 1
+			}).filter_map(|(_, values)| {
+				let library_folder_string = values
+					.get(0)?
+					.get_obj()?
+					.get("path")?
+					.get(0)?
+					.get_str()?
+					.to_string();
+				let library_folder = PathBuf::from(library_folder_string).join("steamapps");
+				Some(library_folder)
+			}).collect();
 
-				.and_then(|vdf| vdf.get("LibraryFolders")
-					.ok_or(&steamy_vdf::Error::Parse)
-
-					.and_then(|entry| entry.as_table()
-						.ok_or(&steamy_vdf::Error::Parse)
-					)
-				)
-			{
-				Err(_) => {},
-				Ok(libraryfolders_vdf) => {
-					self.paths.append(
-						// Filter out non-numeric keys and convert library folder Strings to PathBufs
-						&mut libraryfolders_vdf.keys().filter_map(|key| {
-							key.parse::<u32>().ok()?;
-							Some(PathBuf::from(
-								libraryfolders_vdf.get(key)?.as_str()?.to_string()
-							).join("SteamApps"))
-						}).collect::<Vec<PathBuf>>()
-					)
-				}
-			}
-
+			self.paths = library_folders;
 		}
 		
 		self.discovered = true;
+
+		Some(())
 	}
 }
