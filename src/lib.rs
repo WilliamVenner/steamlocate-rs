@@ -267,7 +267,7 @@ impl SteamDir {
 		    Ok(installation_regkey) => installation_regkey,
 		    Err(_) => return None
 		};
-		
+
 		// The InstallPath key will contain the full path to the Steam directory
 		let install_path_str: String = match installation_regkey.get_value("InstallPath") {
 			Ok(install_path_str) => install_path_str,
@@ -292,7 +292,7 @@ impl SteamDir {
 		    Some(home_dir) => home_dir,
 		    None => return None
 		};
-		
+
 		// Find Library/Application Support/Steam
 		let install_path = home_dir.join("Library/Application Support/Steam");
 		return match install_path.is_dir() {
@@ -314,7 +314,7 @@ impl SteamDir {
 		    Some(home_dir) => home_dir,
 		    None => return None
 		};
-		
+
 		// Find .steam/steam
 		let install_path = home_dir.join(".steam/steam");
 		return match install_path.is_dir() {

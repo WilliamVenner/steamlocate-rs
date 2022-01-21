@@ -82,7 +82,7 @@ impl LibraryFolders {
 
 			self.paths = library_folders;
 		}
-		
+
 		self.discovered = true;
 
 		Some(())
