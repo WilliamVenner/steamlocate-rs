@@ -118,8 +118,6 @@
 #[cfg(not(any(target_os="windows", target_os="macos", target_os="linux")))]
 compile_error!("Unsupported operating system!");
 
-#[macro_use] extern crate lazy_static;
-
 use std::{collections::HashMap, path::PathBuf};
 
 #[cfg(target_os="windows")]
