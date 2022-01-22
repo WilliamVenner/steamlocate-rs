@@ -15,6 +15,7 @@ steamid_ng = ["steamid-ng"]
 
 [dependencies]
 steamy-vdf = "0.*.*"
+keyvalues-parser = "0.1"
 steamid-ng = { version = "1.*", optional = true }
 
 [target.'cfg(target_os="windows")'.dependencies]

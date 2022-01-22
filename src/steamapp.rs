@@ -32,7 +32,7 @@ pub struct SteamApp {
 
 	/// The store name of the Steam app.
 	pub name: Option<String>,
-	
+
 	#[cfg(not(feature="steamid_ng"))]
 	/// The SteamID64 of the last Steam user that played this game on the filesystem.
 	///
