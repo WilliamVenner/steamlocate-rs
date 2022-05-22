@@ -19,65 +19,67 @@ use std::path::PathBuf;
 /// ```
 #[derive(Debug, Clone)]
 pub struct SteamApp {
-	/// The app ID of this Steam app.
-	pub appid: u32,
+    /// The app ID of this Steam app.
+    pub appid: u32,
 
-	/// The path to the installation directory of this Steam app.
-	///
-	/// Example: `C:\Program Files (x86)\Steam\steamapps\common\GarrysMod`
-	pub path: PathBuf,
+    /// The path to the installation directory of this Steam app.
+    ///
+    /// Example: `C:\Program Files (x86)\Steam\steamapps\common\GarrysMod`
+    pub path: PathBuf,
 
-	/// A [steamy_vdf::Table](https://docs.rs/steamy-vdf/*/steamy_vdf/struct.Table.html)
-	pub vdf: steamy_vdf::Table,
+    /// A [steamy_vdf::Table](https://docs.rs/steamy-vdf/*/steamy_vdf/struct.Table.html)
+    pub vdf: steamy_vdf::Table,
 
-	/// The store name of the Steam app.
-	pub name: Option<String>,
+    /// The store name of the Steam app.
+    pub name: Option<String>,
 
-	#[cfg(not(feature="steamid_ng"))]
-	/// The SteamID64 of the last Steam user that played this game on the filesystem.
-	///
-	/// This crate supports [steamid-ng](https://docs.rs/steamid-ng) and can automatically convert this to a [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) for you.
-	///
-	/// To enable this support, [use the  `steamid_ng` Cargo.toml feature](https://docs.rs/steamlocate/*/steamlocate#using-steamlocate).
-	pub last_user: Option<u64>,
+    #[cfg(not(feature = "steamid_ng"))]
+    /// The SteamID64 of the last Steam user that played this game on the filesystem.
+    ///
+    /// This crate supports [steamid-ng](https://docs.rs/steamid-ng) and can automatically convert this to a [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) for you.
+    ///
+    /// To enable this support, [use the  `steamid_ng` Cargo.toml feature](https://docs.rs/steamlocate/*/steamlocate#using-steamlocate).
+    pub last_user: Option<u64>,
 
-	#[cfg(feature="steamid_ng")]
-	/// The [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) of the last Steam user that played this game on the filesystem.
-	pub last_user: Option<steamid_ng::SteamID>
+    #[cfg(feature = "steamid_ng")]
+    /// The [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) of the last Steam user that played this game on the filesystem.
+    pub last_user: Option<steamid_ng::SteamID>,
 }
 
 impl SteamApp {
-	pub(crate) fn new(steamapps: &PathBuf, vdf: &steamy_vdf::Table) -> Option<SteamApp> {
-		// First check if the installation path exists and is a valid directory
-		let install_dir = steamapps.join(vdf.get("installdir")?.as_str()?);
-		if !install_dir.is_dir() { return None }
+    pub(crate) fn new(steamapps: &PathBuf, vdf: &steamy_vdf::Table) -> Option<SteamApp> {
+        // First check if the installation path exists and is a valid directory
+        let install_dir = steamapps.join(vdf.get("installdir")?.as_str()?);
+        if !install_dir.is_dir() {
+            return None;
+        }
 
-		Some(SteamApp {
-			vdf: vdf.clone(),
-			path: install_dir,
+        Some(SteamApp {
+            vdf: vdf.clone(),
+            path: install_dir,
 
-			// Get the appid key, try and parse it as an unsigned 32-bit integer, if we fail, return None
-			appid: vdf.get("appid")?.as_value()?.parse::<u32>().ok()?,
+            // Get the appid key, try and parse it as an unsigned 32-bit integer, if we fail, return None
+            appid: vdf.get("appid")?.as_value()?.parse::<u32>().ok()?,
 
-			// Get the name key, try and convert it into a String, if we fail, name = None
-			name: vdf.get("name").and_then(|entry| entry.as_str().and_then(|str| Some(str.to_string()))),
+            // Get the name key, try and convert it into a String, if we fail, name = None
+            name: vdf
+                .get("name")
+                .and_then(|entry| entry.as_str().and_then(|str| Some(str.to_string()))),
 
-			// Get the LastOwner key, try and convert it into a SteamID64, if we fail, last_user = None
-			#[cfg(not(feature="steamid_ng"))]
-			last_user: vdf.get("LastOwner").and_then(
-				|entry| entry.as_value().and_then(
-					|val| val.parse::<u64>().ok()
-				)
-			),
+            // Get the LastOwner key, try and convert it into a SteamID64, if we fail, last_user = None
+            #[cfg(not(feature = "steamid_ng"))]
+            last_user: vdf
+                .get("LastOwner")
+                .and_then(|entry| entry.as_value().and_then(|val| val.parse::<u64>().ok())),
 
-			#[cfg(feature="steamid_ng")]
-			last_user: vdf.get("LastOwner").and_then(
-				|entry| entry.as_value().and_then(
-					|val| val.parse::<u64>().ok().and_then(
-						|steamid64| Some(steamid_ng::SteamID::from(steamid64))
-					)
-				)
-			),
-		})
-	}
+            #[cfg(feature = "steamid_ng")]
+            last_user: vdf.get("LastOwner").and_then(|entry| {
+                entry.as_value().and_then(|val| {
+                    val.parse::<u64>()
+                        .ok()
+                        .and_then(|steamid64| Some(steamid_ng::SteamID::from(steamid64)))
+                })
+            }),
+        })
+    }
 }
