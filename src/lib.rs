@@ -115,14 +115,17 @@
 //! }
 //! ```
 
-#[cfg(not(any(target_os="windows", target_os="macos", target_os="linux")))]
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 compile_error!("Unsupported operating system!");
 
 use std::{collections::HashMap, path::PathBuf};
 
-#[cfg(target_os="windows")]
-use winreg::{RegKey, enums::{HKEY_LOCAL_MACHINE, KEY_READ}};
-#[cfg(not(target_os="windows"))]
+#[cfg(target_os = "windows")]
+use winreg::{
+    enums::{HKEY_LOCAL_MACHINE, KEY_READ},
+    RegKey,
+};
+#[cfg(not(target_os = "windows"))]
 extern crate dirs;
 
 #[doc(hidden)]
@@ -155,110 +158,113 @@ use steamapps::SteamApps;
 /// ```
 #[derive(Default, Clone, Debug)]
 pub struct SteamDir {
-	/// The path to the Steam installation directory on this computer.
-	///
-	/// Example: `C:\Program Files (x86)\Steam`
-	pub path: PathBuf,
-	pub(crate) steam_apps: SteamApps,
-	pub(crate) libraryfolders: LibraryFolders,
+    /// The path to the Steam installation directory on this computer.
+    ///
+    /// Example: `C:\Program Files (x86)\Steam`
+    pub path: PathBuf,
+    pub(crate) steam_apps: SteamApps,
+    pub(crate) libraryfolders: LibraryFolders,
 }
 
 impl SteamDir {
-	/// Returns a reference to a `LibraryFolders` instance.
-	///
-	/// You can then index `LibraryFolders.paths` to get a reference to a `Vec<PathBuf>` of every library folder installed on the file system.
-	///
-	/// This function will cache its result.
-	pub fn libraryfolders(&mut self) -> &LibraryFolders {
-		let libraryfolders = &mut self.libraryfolders;
-		if !libraryfolders.discovered { libraryfolders.discover(&self.path); }
-		&*libraryfolders
-	}
+    /// Returns a reference to a `LibraryFolders` instance.
+    ///
+    /// You can then index `LibraryFolders.paths` to get a reference to a `Vec<PathBuf>` of every library folder installed on the file system.
+    ///
+    /// This function will cache its result.
+    pub fn libraryfolders(&mut self) -> &LibraryFolders {
+        let libraryfolders = &mut self.libraryfolders;
+        if !libraryfolders.discovered {
+            libraryfolders.discover(&self.path);
+        }
+        &*libraryfolders
+    }
 
-	/// Returns a reference to `HashMap<u32, Option<SteamApp>>` of all `SteamApp`s located on this computer.
-	///
-	/// All `Option<SteamApp>`s in this context will be `Some`, so you can safely `unwrap()` them without panicking.
-	///
-	/// This function will cache its results and will always return a reference to the same `HashMap`.
-	/// # Example
-	/// ```rust
-	/// # use steamlocate::{SteamDir, SteamApp};
-	/// # use std::collections::HashMap;
-	/// let mut steamdir = SteamDir::locate().unwrap();
-	/// let apps: &HashMap<u32, Option<SteamApp>> = steamdir.apps();
-	/// println!("{:#?}", apps);
-	/// ```
-	/// ```ignore
-	/// {
-	/// 	4000: SteamApp (
-	/// 		appid: u32: 4000,
-	/// 		path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-	/// 		vdf: <steamy_vdf::Table>,
-	/// 		name: Some(String: "Garry's Mod"),
-	/// 		last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
-	/// 	)
-	/// 	...
-	/// }
-	/// ```
-	pub fn apps(&mut self) -> &HashMap<u32, Option<SteamApp>> {
-		let steam_apps = &mut self.steam_apps;
-		if !steam_apps.discovered {
-			let libraryfolders = &mut self.libraryfolders;
-			if !libraryfolders.discovered { libraryfolders.discover(&self.path); }
-			steam_apps.discover_apps(libraryfolders);
-		}
-		&steam_apps.apps
-	}
+    /// Returns a reference to `HashMap<u32, Option<SteamApp>>` of all `SteamApp`s located on this computer.
+    ///
+    /// All `Option<SteamApp>`s in this context will be `Some`, so you can safely `unwrap()` them without panicking.
+    ///
+    /// This function will cache its results and will always return a reference to the same `HashMap`.
+    /// # Example
+    /// ```rust
+    /// # use steamlocate::{SteamDir, SteamApp};
+    /// # use std::collections::HashMap;
+    /// let mut steamdir = SteamDir::locate().unwrap();
+    /// let apps: &HashMap<u32, Option<SteamApp>> = steamdir.apps();
+    /// println!("{:#?}", apps);
+    /// ```
+    /// ```ignore
+    /// {
+    /// 	4000: SteamApp (
+    /// 		appid: u32: 4000,
+    /// 		path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
+    /// 		vdf: <steamy_vdf::Table>,
+    /// 		name: Some(String: "Garry's Mod"),
+    /// 		last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
+    /// 	)
+    /// 	...
+    /// }
+    /// ```
+    pub fn apps(&mut self) -> &HashMap<u32, Option<SteamApp>> {
+        let steam_apps = &mut self.steam_apps;
+        if !steam_apps.discovered {
+            let libraryfolders = &mut self.libraryfolders;
+            if !libraryfolders.discovered {
+                libraryfolders.discover(&self.path);
+            }
+            steam_apps.discover_apps(libraryfolders);
+        }
+        &steam_apps.apps
+    }
 
-	/// Returns a `Some` reference to a `SteamApp` via its app ID.
-	///
-	/// If the Steam app is not installed on the system, this will return `None`.
-	///
-	/// This function will cache its (either `Some` and `None`) result and will always return a reference to the same `SteamApp`.
-	///
-	/// # Example
-	/// ```rust
-	/// # use steamlocate::SteamDir;
-	/// let mut steamdir = SteamDir::locate().unwrap();
-	/// let gmod = steamdir.app(&4000);
-	/// println!("{:#?}", gmod.unwrap());
-	/// ```
-	/// ```ignore
-	/// SteamApp (
-	/// 	appid: u32: 4000,
-	/// 	path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-	/// 	vdf: <steamy_vdf::Table>,
-	/// 	name: Some(String: "Garry's Mod"),
-	/// 	last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
-	/// )
-	/// ```
-	pub fn app(&mut self, app_id: &u32) -> Option<&SteamApp> {
-		let steam_apps = &mut self.steam_apps;
+    /// Returns a `Some` reference to a `SteamApp` via its app ID.
+    ///
+    /// If the Steam app is not installed on the system, this will return `None`.
+    ///
+    /// This function will cache its (either `Some` and `None`) result and will always return a reference to the same `SteamApp`.
+    ///
+    /// # Example
+    /// ```rust
+    /// # use steamlocate::SteamDir;
+    /// let mut steamdir = SteamDir::locate().unwrap();
+    /// let gmod = steamdir.app(&4000);
+    /// println!("{:#?}", gmod.unwrap());
+    /// ```
+    /// ```ignore
+    /// SteamApp (
+    /// 	appid: u32: 4000,
+    /// 	path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
+    /// 	vdf: <steamy_vdf::Table>,
+    /// 	name: Some(String: "Garry's Mod"),
+    /// 	last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
+    /// )
+    /// ```
+    pub fn app(&mut self, app_id: &u32) -> Option<&SteamApp> {
+        let steam_apps = &mut self.steam_apps;
 
-		if !steam_apps.apps.contains_key(app_id) {
-			let libraryfolders = &mut self.libraryfolders;
-			if !libraryfolders.discovered { libraryfolders.discover(&self.path); }
-			if let None = steam_apps.discover_app(libraryfolders, app_id) {
-				steam_apps.apps.insert(
-					*app_id,
-					None
-				);
-			}
-		}
+        if !steam_apps.apps.contains_key(app_id) {
+            let libraryfolders = &mut self.libraryfolders;
+            if !libraryfolders.discovered {
+                libraryfolders.discover(&self.path);
+            }
+            if let None = steam_apps.discover_app(libraryfolders, app_id) {
+                steam_apps.apps.insert(*app_id, None);
+            }
+        }
 
-		steam_apps.apps.get(app_id).unwrap().as_ref()
-	}
+        steam_apps.apps.get(app_id).unwrap().as_ref()
+    }
 
-	/// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (Windows)
-	///
-	/// Returns `None` if no Steam installation can be located.
-	#[cfg(target_os="windows")]
-	pub fn locate() -> Option<SteamDir> {
-		// Locating the Steam installation location is a bit more complicated on Windows
+    /// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (Windows)
+    ///
+    /// Returns `None` if no Steam installation can be located.
+    #[cfg(target_os = "windows")]
+    pub fn locate() -> Option<SteamDir> {
+        // Locating the Steam installation location is a bit more complicated on Windows
 
-		// Steam's installation location can be found in the registry
-		let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-		let installation_regkey = match
+        // Steam's installation location can be found in the registry
+        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+        let installation_regkey = match
 			hklm.open_subkey_with_flags("SOFTWARE\\Wow6432Node\\Valve\\Steam", KEY_READ).or_else(|_| // 32-bit
 			hklm.open_subkey_with_flags("SOFTWARE\\Valve\\Steam", KEY_READ)) // 64-bit
 		{
@@ -266,63 +272,63 @@ impl SteamDir {
 		    Err(_) => return None
 		};
 
-		// The InstallPath key will contain the full path to the Steam directory
-		let install_path_str: String = match installation_regkey.get_value("InstallPath") {
-			Ok(install_path_str) => install_path_str,
-			Err(_) => return None
-		};
+        // The InstallPath key will contain the full path to the Steam directory
+        let install_path_str: String = match installation_regkey.get_value("InstallPath") {
+            Ok(install_path_str) => install_path_str,
+            Err(_) => return None,
+        };
 
-		let install_path = PathBuf::from(install_path_str);
+        let install_path = PathBuf::from(install_path_str);
 
-		Some(SteamDir {
-			path: install_path,
-			..Default::default()
-		})
-	}
+        Some(SteamDir {
+            path: install_path,
+            ..Default::default()
+        })
+    }
 
-	/// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (macOS)
-	///
-	/// Returns `None` if no Steam installation can be located.
-	#[cfg(target_os="macos")]
-	pub fn locate() -> Option<SteamDir> {
-		// Steam's installation location is pretty easy to find on macOS, as it's always in $USER/Library/Application Support
-		let home_dir = match dirs::home_dir() {
-		    Some(home_dir) => home_dir,
-		    None => return None
-		};
+    /// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (macOS)
+    ///
+    /// Returns `None` if no Steam installation can be located.
+    #[cfg(target_os = "macos")]
+    pub fn locate() -> Option<SteamDir> {
+        // Steam's installation location is pretty easy to find on macOS, as it's always in $USER/Library/Application Support
+        let home_dir = match dirs::home_dir() {
+            Some(home_dir) => home_dir,
+            None => return None,
+        };
 
-		// Find Library/Application Support/Steam
-		let install_path = home_dir.join("Library/Application Support/Steam");
-		return match install_path.is_dir() {
-			false => None,
-			true => Some(SteamDir {
-				path: install_path,
-				..Default::default()
-			})
-		}
-	}
+        // Find Library/Application Support/Steam
+        let install_path = home_dir.join("Library/Application Support/Steam");
+        return match install_path.is_dir() {
+            false => None,
+            true => Some(SteamDir {
+                path: install_path,
+                ..Default::default()
+            }),
+        };
+    }
 
-	/// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (Linux)
-	///
-	/// Returns `None` if no Steam installation can be located.
-	#[cfg(target_os="linux")]
-	pub fn locate() -> Option<SteamDir> {
-		// Steam's installation location is pretty easy to find on Linux, too, thanks to the symlink in $USER
-		let home_dir = match dirs::home_dir() {
-		    Some(home_dir) => home_dir,
-		    None => return None
-		};
+    /// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (Linux)
+    ///
+    /// Returns `None` if no Steam installation can be located.
+    #[cfg(target_os = "linux")]
+    pub fn locate() -> Option<SteamDir> {
+        // Steam's installation location is pretty easy to find on Linux, too, thanks to the symlink in $USER
+        let home_dir = match dirs::home_dir() {
+            Some(home_dir) => home_dir,
+            None => return None,
+        };
 
-		// Find .steam/steam
-		let install_path = home_dir.join(".steam/steam");
-		return match install_path.is_dir() {
-			false => None,
-			true => Some(SteamDir {
-				path: install_path,
-				..Default::default()
-			})
-		}
-	}
+        // Find .steam/steam
+        let install_path = home_dir.join(".steam/steam");
+        return match install_path.is_dir() {
+            false => None,
+            true => Some(SteamDir {
+                path: install_path,
+                ..Default::default()
+            }),
+        };
+    }
 }
 
 #[cfg(test)]
