@@ -1,4 +1,10 @@
-use std::path::PathBuf;
+use std::{
+    collections::BTreeMap,
+    fs,
+    path::{Path, PathBuf},
+};
+
+use serde::Deserialize;
 
 /// An instance of an installed Steam app.
 /// # Example
@@ -20,18 +26,35 @@ use std::path::PathBuf;
 #[derive(Debug, Clone)]
 pub struct SteamApp {
     /// The app ID of this Steam app.
-    pub appid: u32,
+    pub app_id: u32,
 
     /// The path to the installation directory of this Steam app.
     ///
     /// Example: `C:\Program Files (x86)\Steam\steamapps\common\GarrysMod`
     pub path: PathBuf,
 
-    /// A [steamy_vdf::Table](https://docs.rs/steamy-vdf/*/steamy_vdf/struct.Table.html)
-    pub vdf: steamy_vdf::Table,
-
     /// The store name of the Steam app.
-    pub name: Option<String>,
+    pub name: String,
+
+    pub universe: u64,
+    pub state_flags: u64,
+    pub last_updated: u64,
+    pub update_result: u64,
+    pub size_on_disk: u64,
+    pub build_id: u64,
+    pub bytes_to_download: u64,
+    pub bytes_downloaded: u64,
+    pub bytes_to_stage: u64,
+    pub bytes_staged: u64,
+    pub staging_size: Option<u64>,
+    pub auto_update_behavior: u64,
+    pub allow_other_downloads_while_running: u64,
+    pub scheduled_auto_update: u64,
+    pub installed_depots: BTreeMap<u64, Depot>,
+    pub user_config: BTreeMap<String, String>,
+    pub mounted_config: BTreeMap<String, String>,
+    pub install_scripts: BTreeMap<u64, String>,
+    pub shared_depots: BTreeMap<u64, u64>,
 
     #[cfg(not(feature = "steamid_ng"))]
     /// The SteamID64 of the last Steam user that played this game on the filesystem.
@@ -39,47 +62,131 @@ pub struct SteamApp {
     /// This crate supports [steamid-ng](https://docs.rs/steamid-ng) and can automatically convert this to a [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) for you.
     ///
     /// To enable this support, [use the  `steamid_ng` Cargo.toml feature](https://docs.rs/steamlocate/*/steamlocate#using-steamlocate).
-    pub last_user: Option<u64>,
+    pub last_user: u64,
 
     #[cfg(feature = "steamid_ng")]
     /// The [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) of the last Steam user that played this game on the filesystem.
-    pub last_user: Option<steamid_ng::SteamID>,
+    pub last_user: steamid_ng::SteamID,
 }
 
 impl SteamApp {
-    pub(crate) fn new(steamapps: &PathBuf, vdf: &steamy_vdf::Table) -> Option<SteamApp> {
+    pub(crate) fn new(library_path: &Path, manifest: &Path) -> Option<Self> {
+        let contents = fs::read_to_string(manifest).ok()?;
+        let InternalSteamApps {
+            app_id,
+            universe,
+            name,
+            state_flags,
+            install_dir,
+            last_updated,
+            update_result,
+            size_on_disk,
+            build_id,
+            last_user,
+            bytes_to_download,
+            bytes_downloaded,
+            bytes_to_stage,
+            bytes_staged,
+            staging_size,
+            auto_update_behavior,
+            allow_other_downloads_while_running,
+            scheduled_auto_update,
+            installed_depots,
+            user_config,
+            mounted_config,
+            install_scripts,
+            shared_depots,
+        } = keyvalues_serde::from_str(&contents).ok()?;
+
         // First check if the installation path exists and is a valid directory
-        let install_dir = steamapps.join(vdf.get("installdir")?.as_str()?);
-        if !install_dir.is_dir() {
+        let path = library_path.join("common").join(install_dir);
+        if !path.is_dir() {
+            println!("{:?}", path);
             return None;
         }
 
-        Some(SteamApp {
-            vdf: vdf.clone(),
-            path: install_dir,
+        #[cfg(feature = "steamid_ng")]
+        let last_user = steamid_ng::SteamID::from(last_user);
 
-            // Get the appid key, try and parse it as an unsigned 32-bit integer, if we fail, return None
-            appid: vdf.get("appid")?.as_value()?.parse::<u32>().ok()?,
-
-            // Get the name key, try and convert it into a String, if we fail, name = None
-            name: vdf
-                .get("name")
-                .and_then(|entry| entry.as_str().and_then(|str| Some(str.to_string()))),
-
-            // Get the LastOwner key, try and convert it into a SteamID64, if we fail, last_user = None
-            #[cfg(not(feature = "steamid_ng"))]
-            last_user: vdf
-                .get("LastOwner")
-                .and_then(|entry| entry.as_value().and_then(|val| val.parse::<u64>().ok())),
-
-            #[cfg(feature = "steamid_ng")]
-            last_user: vdf.get("LastOwner").and_then(|entry| {
-                entry.as_value().and_then(|val| {
-                    val.parse::<u64>()
-                        .ok()
-                        .and_then(|steamid64| Some(steamid_ng::SteamID::from(steamid64)))
-                })
-            }),
+        Some(Self {
+            app_id,
+            universe,
+            name,
+            state_flags,
+            path,
+            last_updated,
+            update_result,
+            size_on_disk,
+            build_id,
+            last_user,
+            bytes_to_download,
+            bytes_downloaded,
+            bytes_to_stage,
+            bytes_staged,
+            staging_size,
+            auto_update_behavior,
+            allow_other_downloads_while_running,
+            scheduled_auto_update,
+            installed_depots,
+            user_config,
+            mounted_config,
+            install_scripts,
+            shared_depots,
         })
     }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize)]
+pub struct Depot {
+    pub manifest: u64,
+    pub size: u64,
+}
+
+#[derive(Debug, Deserialize)]
+struct InternalSteamApps {
+    #[serde(rename = "appid")]
+    app_id: u32,
+    #[serde(rename = "Universe")]
+    universe: u64,
+    name: String,
+    #[serde(rename = "StateFlags")]
+    state_flags: u64,
+    #[serde(rename = "installdir")]
+    install_dir: String,
+    #[serde(rename = "LastUpdated")]
+    last_updated: u64,
+    #[serde(rename = "UpdateResult")]
+    update_result: u64,
+    #[serde(rename = "SizeOnDisk")]
+    size_on_disk: u64,
+    #[serde(rename = "buildid")]
+    build_id: u64,
+    #[serde(rename = "LastOwner")]
+    last_user: u64,
+    #[serde(rename = "BytesToDownload")]
+    bytes_to_download: u64,
+    #[serde(rename = "BytesDownloaded")]
+    bytes_downloaded: u64,
+    #[serde(rename = "BytesToStage")]
+    bytes_to_stage: u64,
+    #[serde(rename = "BytesStaged")]
+    bytes_staged: u64,
+    #[serde(rename = "StagingSize")]
+    staging_size: Option<u64>,
+    #[serde(rename = "AutoUpdateBehavior")]
+    auto_update_behavior: u64,
+    #[serde(rename = "AllowOtherDownloadsWhileRunning")]
+    allow_other_downloads_while_running: u64,
+    #[serde(rename = "ScheduledAutoUpdate")]
+    scheduled_auto_update: u64,
+    #[serde(rename = "InstalledDepots")]
+    installed_depots: BTreeMap<u64, Depot>,
+    #[serde(rename = "UserConfig")]
+    user_config: BTreeMap<String, String>,
+    #[serde(default, rename = "MountedConfig")]
+    mounted_config: BTreeMap<String, String>,
+    #[serde(default, rename = "InstallScripts")]
+    install_scripts: BTreeMap<u64, String>,
+    #[serde(default, rename = "SharedDepots")]
+    shared_depots: BTreeMap<u64, u64>,
 }

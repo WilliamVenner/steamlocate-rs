@@ -14,8 +14,9 @@ categories = ["os", "hardware-support", "filesystem", "accessibility"]
 steamid_ng = ["steamid-ng"]
 
 [dependencies]
-steamy-vdf = "0.*.*"
 keyvalues-parser = "0.1"
+keyvalues-serde = "0.1"
+serde = { version = "1.0", features = ["derive"] }
 steamid-ng = { version = "1.*", optional = true }
 
 [target.'cfg(target_os="windows")'.dependencies]
