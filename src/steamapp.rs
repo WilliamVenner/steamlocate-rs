@@ -37,6 +37,7 @@ pub struct SteamApp {
     pub name: String,
 
     pub universe: u64,
+    pub launcher_path: Option<PathBuf>,
     pub state_flags: u64,
     pub last_updated: u64,
     pub update_result: Option<u64>,
@@ -75,6 +76,7 @@ impl SteamApp {
         let InternalSteamApps {
             app_id,
             universe,
+            launcher_path,
             name,
             state_flags,
             install_dir,
@@ -110,6 +112,7 @@ impl SteamApp {
         Some(Self {
             app_id,
             universe,
+            launcher_path,
             name,
             state_flags,
             path,
@@ -139,6 +142,8 @@ impl SteamApp {
 pub struct Depot {
     pub manifest: u64,
     pub size: u64,
+    #[serde(rename = "dlcappid")]
+    pub dlc_app_id: Option<u64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -147,6 +152,8 @@ struct InternalSteamApps {
     app_id: u32,
     #[serde(rename = "Universe")]
     universe: u64,
+    #[serde(rename = "LauncherPath")]
+    launcher_path: Option<PathBuf>,
     name: String,
     #[serde(rename = "StateFlags")]
     state_flags: u64,
