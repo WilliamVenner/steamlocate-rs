@@ -101,7 +101,6 @@ impl SteamApp {
         // First check if the installation path exists and is a valid directory
         let path = library_path.join("common").join(install_dir);
         if !path.is_dir() {
-            println!("{:?}", path);
             return None;
         }
 
