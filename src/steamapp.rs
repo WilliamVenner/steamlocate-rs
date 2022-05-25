@@ -39,13 +39,13 @@ pub struct SteamApp {
     pub universe: u64,
     pub state_flags: u64,
     pub last_updated: u64,
-    pub update_result: u64,
+    pub update_result: Option<u64>,
     pub size_on_disk: u64,
     pub build_id: u64,
-    pub bytes_to_download: u64,
-    pub bytes_downloaded: u64,
-    pub bytes_to_stage: u64,
-    pub bytes_staged: u64,
+    pub bytes_to_download: Option<u64>,
+    pub bytes_downloaded: Option<u64>,
+    pub bytes_to_stage: Option<u64>,
+    pub bytes_staged: Option<u64>,
     pub staging_size: Option<u64>,
     pub auto_update_behavior: u64,
     pub allow_other_downloads_while_running: u64,
@@ -155,7 +155,7 @@ struct InternalSteamApps {
     #[serde(rename = "LastUpdated")]
     last_updated: u64,
     #[serde(rename = "UpdateResult")]
-    update_result: u64,
+    update_result: Option<u64>,
     #[serde(rename = "SizeOnDisk")]
     size_on_disk: u64,
     #[serde(rename = "buildid")]
@@ -163,13 +163,13 @@ struct InternalSteamApps {
     #[serde(rename = "LastOwner")]
     last_user: u64,
     #[serde(rename = "BytesToDownload")]
-    bytes_to_download: u64,
+    bytes_to_download: Option<u64>,
     #[serde(rename = "BytesDownloaded")]
-    bytes_downloaded: u64,
+    bytes_downloaded: Option<u64>,
     #[serde(rename = "BytesToStage")]
-    bytes_to_stage: u64,
+    bytes_to_stage: Option<u64>,
     #[serde(rename = "BytesStaged")]
-    bytes_staged: u64,
+    bytes_staged: Option<u64>,
     #[serde(rename = "StagingSize")]
     staging_size: Option<u64>,
     #[serde(rename = "AutoUpdateBehavior")]
