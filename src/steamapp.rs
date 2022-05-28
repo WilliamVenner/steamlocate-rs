@@ -48,13 +48,17 @@ pub struct SteamApp {
     pub bytes_to_stage: Option<u64>,
     pub bytes_staged: Option<u64>,
     pub staging_size: Option<u64>,
+    pub target_build_id: Option<u64>,
     pub auto_update_behavior: u64,
     pub allow_other_downloads_while_running: u64,
     pub scheduled_auto_update: u64,
+    pub full_validate_before_next_update: Option<bool>,
+    pub full_validate_after_next_update: Option<bool>,
     pub installed_depots: BTreeMap<u64, Depot>,
+    pub staged_depots: BTreeMap<u64, Depot>,
     pub user_config: BTreeMap<String, String>,
     pub mounted_config: BTreeMap<String, String>,
-    pub install_scripts: BTreeMap<u64, String>,
+    pub install_scripts: BTreeMap<u64, PathBuf>,
     pub shared_depots: BTreeMap<u64, u64>,
 
     #[cfg(not(feature = "steamid_ng"))]
@@ -90,10 +94,14 @@ impl SteamApp {
             bytes_to_stage,
             bytes_staged,
             staging_size,
+            target_build_id,
             auto_update_behavior,
             allow_other_downloads_while_running,
             scheduled_auto_update,
+            full_validate_before_next_update,
+            full_validate_after_next_update,
             installed_depots,
+            staged_depots,
             user_config,
             mounted_config,
             install_scripts,
@@ -107,7 +115,7 @@ impl SteamApp {
         }
 
         #[cfg(feature = "steamid_ng")]
-        let last_user = steamid_ng::SteamID::from(last_user);
+        let last_user = last_user.map(steamid_ng::SteamID::from);
 
         Some(Self {
             app_id,
@@ -126,10 +134,14 @@ impl SteamApp {
             bytes_to_stage,
             bytes_staged,
             staging_size,
+            target_build_id,
             auto_update_behavior,
             allow_other_downloads_while_running,
             scheduled_auto_update,
+            full_validate_before_next_update,
+            full_validate_after_next_update,
             installed_depots,
+            staged_depots,
             user_config,
             mounted_config,
             install_scripts,
@@ -179,20 +191,28 @@ struct InternalSteamApps {
     bytes_staged: Option<u64>,
     #[serde(rename = "StagingSize")]
     staging_size: Option<u64>,
+    #[serde(rename = "TargetBuildID")]
+    target_build_id: Option<u64>,
     #[serde(rename = "AutoUpdateBehavior")]
     auto_update_behavior: u64,
     #[serde(rename = "AllowOtherDownloadsWhileRunning")]
     allow_other_downloads_while_running: u64,
     #[serde(rename = "ScheduledAutoUpdate")]
     scheduled_auto_update: u64,
+    #[serde(rename = "FullValidateBeforeNextUpdate")]
+    full_validate_before_next_update: Option<bool>,
+    #[serde(rename = "FullValidateAfterNextUpdate")]
+    full_validate_after_next_update: Option<bool>,
     #[serde(rename = "InstalledDepots")]
     installed_depots: BTreeMap<u64, Depot>,
+    #[serde(default, rename = "StagedDepots")]
+    staged_depots: BTreeMap<u64, Depot>,
+    #[serde(default, rename = "SharedDepots")]
+    shared_depots: BTreeMap<u64, u64>,
     #[serde(rename = "UserConfig")]
     user_config: BTreeMap<String, String>,
     #[serde(default, rename = "MountedConfig")]
     mounted_config: BTreeMap<String, String>,
     #[serde(default, rename = "InstallScripts")]
-    install_scripts: BTreeMap<u64, String>,
-    #[serde(default, rename = "SharedDepots")]
-    shared_depots: BTreeMap<u64, u64>,
+    install_scripts: BTreeMap<u64, PathBuf>,
 }
