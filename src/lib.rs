@@ -49,7 +49,7 @@
 //!
 //! ### Locate an installed Steam app by its app ID
 //! This will locate Garry's Mod anywhere on the filesystem.
-//! ```rust
+//! ```ignore
 //! extern crate steamlocate;
 //! use steamlocate::SteamDir;
 //!
@@ -70,7 +70,7 @@
 //! ```
 //!
 //! ### Locate all Steam apps on this filesystem
-//! ```rust
+//! ```ignore
 //! extern crate steamlocate;
 //! use steamlocate::{SteamDir, SteamApp};
 //! use std::collections::HashMap;
@@ -94,7 +94,7 @@
 //! ```
 //!
 //! ### Locate all Steam library folders
-//! ```rust
+//! ```ignore
 //! extern crate steamlocate;
 //! use steamlocate::{SteamDir, LibraryFolders};
 //! use std::{vec, path::PathBuf};
@@ -178,7 +178,7 @@ impl SteamDir {
     /// This function will cache its (either `Some` and `None`) result and will always return a reference to the same `SteamApp`.
     ///
     /// # Example
-    /// ```rust
+    /// ```ignore
     /// # use steamlocate::SteamDir;
     /// let mut steamdir = SteamDir::locate().unwrap();
     /// let gmod = steamdir.app(&4000);
@@ -193,7 +193,7 @@ impl SteamDir {
     /// 	last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
     /// )
     /// ```
-    pub fn app(&mut self, app_id: u32) -> Option<SteamApp> {
+    pub fn app(&self, app_id: u32) -> Option<SteamApp> {
         // Search for the `app_id` in each library
         self.libraries().iter().find_map(|lib| lib.app(app_id))
     }

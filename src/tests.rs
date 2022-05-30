@@ -9,79 +9,62 @@ use super::*;
 
 #[test]
 fn find_steam() {
-    let steamdir_found = SteamDir::locate();
-    assert!(steamdir_found.is_some());
-    println!("{:#?}", steamdir_found.unwrap());
+    SteamDir::locate().unwrap();
 }
 
 #[test]
 fn find_library_folders() {
-    let steamdir_found = SteamDir::locate();
-    assert!(steamdir_found.is_some());
-
-    let mut steamdir = steamdir_found.unwrap();
-
-    steamdir.libraryfolders.discover(&steamdir.path);
-    assert!(steamdir.libraryfolders().paths.len() > 1);
-
-    println!("{:#?}", steamdir.libraryfolders.paths);
+    let steam_dir = SteamDir::locate().unwrap();
+    assert!(steam_dir.libraries().len() > 1);
 }
 
 #[test]
 fn find_app() {
-    let steamdir_found = SteamDir::locate();
-    assert!(steamdir_found.is_some());
-
-    let mut steamdir = steamdir_found.unwrap();
-
-    let steamapp = steamdir.app(&APP_ID);
-    assert!(steamapp.is_some());
-
-    println!("{:#?}", steamapp.unwrap());
+    let steam_dir = SteamDir::locate().unwrap();
+    let steam_app = steam_dir.app(APP_ID).unwrap();
+    assert_eq!(steam_app.appid, APP_ID);
 }
 
 #[test]
 fn app_details() {
-    let steamdir_found = SteamDir::locate();
-    assert!(steamdir_found.is_some());
-
-    let mut steamdir = steamdir_found.unwrap();
-
-    let steamapp = steamdir.app(&APP_ID);
-    assert!(steamapp.is_some());
-
-    assert!(steamapp.unwrap().name.is_some());
-    assert!(steamapp.unwrap().last_user.is_some());
+    let steam_dir = SteamDir::locate().unwrap();
+    let steam_app = steam_dir.app(APP_ID).unwrap();
+    steam_app.name.unwrap();
+    steam_app.last_user.unwrap();
 }
 
 #[test]
 fn all_apps() {
-    let steamdir_found = SteamDir::locate();
-    assert!(steamdir_found.is_some());
-
-    let mut steamdir = steamdir_found.unwrap();
-
-    let steamapps = steamdir.apps();
-    assert!(!steamapps.is_empty());
-    assert!(steamapps.keys().len() > 1);
-
-    // println!("{:#?}", steamapps);
+    let steam_dir = SteamDir::locate().unwrap();
+    let steam_apps: Vec<_> = steam_dir
+        .libraries()
+        .iter()
+        .flat_map(Library::apps)
+        .collect::<Option<_>>()
+        .unwrap();
+    assert!(!steam_apps.is_empty());
+    assert!(steam_apps.len() > 1);
 }
 
 #[test]
 fn all_apps_get_one() {
-    let steamdir_found = SteamDir::locate();
-    assert!(steamdir_found.is_some());
+    let steam_dir = SteamDir::locate().unwrap();
 
-    let mut steamdir = steamdir_found.unwrap();
+    let steam_apps: Vec<_> = steam_dir
+        .libraries()
+        .iter()
+        .flat_map(Library::apps)
+        .collect::<Option<_>>()
+        .unwrap();
+    assert!(!steam_apps.is_empty());
+    assert!(steam_apps.len() > 1);
 
-    let steamapps = steamdir.apps();
-    assert!(!steamapps.is_empty());
-    assert!(steamapps.keys().len() > 1);
-
-    let steamapp = steamdir.app(&APP_ID);
-    assert!(steamapp.is_some());
-
-    assert!(steamapp.unwrap().name.is_some());
-    assert!(steamapp.unwrap().last_user.is_some());
+    let steam_app = steam_dir.app(APP_ID).unwrap();
+    assert_eq!(
+        steam_apps
+            .into_iter()
+            .find(|app| app.appid == APP_ID)
+            .unwrap(),
+        steam_app
+    );
 }

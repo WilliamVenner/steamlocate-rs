@@ -10,8 +10,8 @@ fn main() {
     }
     let app_id: u32 = args[1].parse().unwrap();
 
-    let mut steamdir = SteamDir::locate().unwrap();
-    match steamdir.app(app_id) {
+    let steam_dir = SteamDir::locate().unwrap();
+    match steam_dir.app(app_id) {
         Some(app) => println!("Found app - {:#?}", app),
         None => println!("No app found for {}", app_id),
     }

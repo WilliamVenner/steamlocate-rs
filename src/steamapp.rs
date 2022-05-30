@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 /// An instance of an installed Steam app.
 /// # Example
-/// ```rust
+/// ```ignore
 /// # use steamlocate::SteamDir;
 /// let mut steamdir = SteamDir::locate().unwrap();
 /// let gmod = steamdir.app(&4000);
@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 /// 	last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
 /// )
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SteamApp {
     /// The app ID of this Steam app.
     pub appid: u32,
