@@ -210,7 +210,7 @@ impl SteamDir {
     }
 
     #[cfg(target_os = "windows")]
-    fn locate_steam_dir() -> Option<SteamDir> {
+    fn locate_steam_dir() -> Option<PathBuf> {
         // Locating the Steam installation location is a bit more complicated on Windows
 
         // Steam's installation location can be found in the registry
