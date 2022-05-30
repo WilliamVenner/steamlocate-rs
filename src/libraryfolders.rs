@@ -69,15 +69,24 @@ pub struct Library {
 
 impl Library {
     fn new(obj: &Obj) -> Option<Self> {
-        let path = obj.get("path")?.get(0)?.get_str()?;
-        let path = PathBuf::from(path);
-        let apps = obj
-            .get("apps")?
-            .get(0)?
-            .get_obj()?
-            .keys()
-            .map(|app_str| app_str.parse().ok())
-            .collect::<Option<_>>()?;
+        let path_str = obj.get("path")?.get(0)?.get_str()?;
+        let path = PathBuf::from(path_str);
+
+        // Read the manifest files at the library to get an up-to-date list of apps since the
+        // values in `libraryfolders.vdf` may be stale
+        let mut apps = Vec::new();
+        for entry in fs::read_dir(path.join("steamapps")).ok()? {
+            let entry = entry.ok()?;
+            if let Some(id) = entry
+                .file_name()
+                .to_str()
+                .and_then(|name| name.strip_prefix("appmanifest_"))
+                .and_then(|prefixless_name| prefixless_name.strip_suffix(".acf"))
+                .and_then(|app_id_str| app_id_str.parse().ok())
+            {
+                apps.push(id);
+            }
+        }
 
         Some(Self { path, apps })
     }
