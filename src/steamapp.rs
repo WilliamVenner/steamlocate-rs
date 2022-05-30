@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// An instance of an installed Steam app.
 /// # Example
@@ -47,7 +47,24 @@ pub struct SteamApp {
 }
 
 impl SteamApp {
-    pub(crate) fn new(steamapps: &PathBuf, vdf: &steamy_vdf::Table) -> Option<SteamApp> {
+    pub fn new(manifest_path: &Path) -> Option<SteamApp> {
+        if !manifest_path.is_file() {
+            return None;
+        }
+
+        let steamapps = {
+            let mut tmp = manifest_path.to_owned();
+            tmp.pop();
+            tmp.push("common");
+            tmp
+        };
+
+        let vdf = steamy_vdf::load(manifest_path)
+            .ok()?
+            .get("AppState")?
+            .as_table()?
+            .to_owned();
+
         // First check if the installation path exists and is a valid directory
         let install_dir = steamapps.join(vdf.get("installdir")?.as_str()?);
         if !install_dir.is_dir() {
