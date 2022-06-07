@@ -319,15 +319,28 @@ impl SteamDir {
             None => return None,
         };
 
-        // Find .steam/steam
-        let install_path = home_dir.join(".steam/steam");
-        return match install_path.is_dir() {
-            false => None,
-            true => Some(SteamDir {
-                path: install_path,
+        // Check for Flatpak steam install
+        let steam_flatpak_path = home_dir.join(".var/app/com.valvesoftware.Steam");
+        if steam_flatpak_path.is_dir() {
+            let steam_flatpak_install_path = steam_flatpak_path.join(".steam/steam");
+            if steam_flatpak_install_path.is_dir() {
+                return Some(SteamDir {
+                    path: steam_flatpak_install_path,
+                    ..Default::default()
+                })
+            }
+        }
+
+        // Check for Standard steam install
+        let standard_path = home_dir.join(".steam/steam");
+        if standard_path.is_dir() {
+            return Some(SteamDir {
+                path: standard_path,
                 ..Default::default()
-            }),
-        };
+            })
+        }
+
+        None
     }
 }
 
