@@ -1,6 +1,6 @@
 [package]
 name = "steamlocate"
-version = "1.0.1"
+version = "1.0.2"
 authors = ["William Venner <william@venner.io>"]
 edition = "2018"
 repository = "https://github.com/WilliamVenner/steamlocate-rs"
@@ -14,11 +14,11 @@ categories = ["os", "hardware-support", "filesystem", "accessibility"]
 steamid_ng = ["steamid-ng"]
 
 [dependencies]
-steamy-vdf = "0.*.*"
+steamy-vdf = "0.2"
 keyvalues-parser = "0.1"
-steamid-ng = { version = "1.*", optional = true }
+steamid-ng = { version = "1", optional = true }
 
 [target.'cfg(target_os="windows")'.dependencies]
-winreg = "0.*"
+winreg = "0.10"
 [target.'cfg(not(target_os="windows"))'.dependencies]
-dirs = "3.*"
+dirs = "3"
