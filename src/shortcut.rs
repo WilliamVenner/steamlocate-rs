@@ -4,9 +4,9 @@ use std::{fs, iter::Peekable, path::Path, slice::Iter};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Shortcut {
-    appid: u32,
-    app_name: String,
-    executable: String,
+    pub appid: u32,
+    pub app_name: String,
+    pub executable: String,
 }
 
 /// Discovers any shorcuts stored within `userdata`
