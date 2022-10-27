@@ -3,10 +3,12 @@
 use std::{fs, iter::Peekable, path::Path, slice::Iter};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct Shortcut {
     pub appid: u32,
     pub app_name: String,
     pub executable: String,
+    pub start_dir: String,
 }
 
 /// Discovers any shorcuts stored within `userdata`
@@ -107,10 +109,16 @@ fn parse_shortcuts(contents: &[u8]) -> Option<Vec<Shortcut>> {
         }
         let executable = parse_value_str(&mut it)?;
 
+        if !after_many(&mut it, b"\x01StartDir\x00") {
+            return None;
+        }
+        let start_dir = parse_value_str(&mut it)?;
+
         let shortcut = Shortcut {
             appid,
             app_name,
             executable,
+            start_dir,
         };
         shortcuts.push(shortcut);
     }
@@ -131,16 +139,19 @@ mod tests {
                     appid: 2786274309,
                     app_name: "Anki".into(),
                     executable: "\"anki\"".into(),
+                    start_dir: "\"./\"".into(),
                 },
                 Shortcut {
                     appid: 2492174738,
                     app_name: "LibreOffice Calc".into(),
                     executable: "\"libreoffice\"".into(),
+                    start_dir: "\"./\"".into(),
                 },
                 Shortcut {
                     appid: 3703025501,
                     app_name: "foo.sh".into(),
                     executable: "\"/usr/local/bin/foo.sh\"".into(),
+                    start_dir: "\"/usr/local/bin/\"".into(),
                 }
             ])
         );
