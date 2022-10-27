@@ -11,6 +11,20 @@ pub struct Shortcut {
     pub start_dir: String,
 }
 
+#[cfg(feature = "shortcuts_extras")]
+impl Shortcut {
+    pub fn steam_id(&self) -> u64 {
+        let algorithm = crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
+
+        let mut digest = algorithm.digest();
+        digest.update(self.executable.as_bytes());
+        digest.update(self.app_name.as_bytes());
+
+        let top = digest.finalize() | 0x80000000;
+        ((top as u64) << 32) | 0x02000000
+    }
+}
+
 /// Discovers any shorcuts stored within `userdata`
 pub fn discover_shortcuts(steam_dir: &Path) -> Vec<Shortcut> {
     fn inner(steam_dir: &Path) -> Option<Vec<Shortcut>> {
@@ -131,10 +145,10 @@ mod tests {
     #[test]
     fn sanity() {
         let contents = include_bytes!("../tests/sample_data/shortcuts.vdf");
-        let shortcuts = parse_shortcuts(contents);
+        let shortcuts = parse_shortcuts(contents).unwrap();
         assert_eq!(
             shortcuts,
-            Some(vec![
+            vec![
                 Shortcut {
                     appid: 2786274309,
                     app_name: "Anki".into(),
@@ -153,7 +167,18 @@ mod tests {
                     executable: "\"/usr/local/bin/foo.sh\"".into(),
                     start_dir: "\"/usr/local/bin/\"".into(),
                 }
-            ])
+            ],
         );
+    }
+
+    #[cfg(feature = "shortcuts_extras")]
+    #[test]
+    fn shortcuts_extras() {
+        let contents = include_bytes!("../tests/sample_data/shortcuts.vdf");
+        let shortcuts = parse_shortcuts(contents).unwrap();
+        let ideal_ids = vec![0xe89614fe02000000, 0xdb01c79902000000, 0x9d55017302000000];
+        for (id, shortcut) in ideal_ids.into_iter().zip(shortcuts.iter()) {
+            assert_eq!(id, shortcut.steam_id());
+        }
     }
 }
