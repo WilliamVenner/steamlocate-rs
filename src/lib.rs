@@ -139,6 +139,9 @@ pub use libraryfolders::LibraryFolders;
 mod steamapps;
 use steamapps::SteamApps;
 
+mod shortcut;
+pub use shortcut::Shortcut;
+
 /// An instance of a Steam installation.
 ///
 /// All functions of this struct will cache their results.
@@ -164,6 +167,7 @@ pub struct SteamDir {
     pub path: PathBuf,
     pub(crate) steam_apps: SteamApps,
     pub(crate) libraryfolders: LibraryFolders,
+    pub(crate) shortcuts: Option<Vec<Shortcut>>,
 }
 
 impl SteamDir {
@@ -255,6 +259,16 @@ impl SteamDir {
         steam_apps.apps.get(app_id).unwrap().as_ref()
     }
 
+    /// Returns a listing of all added non-Steam games
+    pub fn shortcuts(&mut self) -> &[Shortcut] {
+        if self.shortcuts.is_none() {
+            let shortcuts = shortcut::discover_shortcuts(&self.path);
+            self.shortcuts = Some(shortcuts);
+        }
+
+        self.shortcuts.as_ref().unwrap()
+    }
+
     /// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (Windows)
     ///
     /// Returns `None` if no Steam installation can be located.
@@ -327,7 +341,7 @@ impl SteamDir {
                 return Some(SteamDir {
                     path: steam_flatpak_install_path,
                     ..Default::default()
-                })
+                });
             }
         }
 
@@ -337,7 +351,7 @@ impl SteamDir {
             return Some(SteamDir {
                 path: standard_path,
                 ..Default::default()
-            })
+            });
         }
 
         None
