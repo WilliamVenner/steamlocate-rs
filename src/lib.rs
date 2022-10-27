@@ -259,6 +259,7 @@ impl SteamDir {
         steam_apps.apps.get(app_id).unwrap().as_ref()
     }
 
+    /// Returns a listing of all added non-Steam games
     pub fn shortcuts(&mut self) -> &[Shortcut] {
         if self.shortcuts.is_none() {
             let shortcuts = shortcut::discover_shortcuts(&self.path);

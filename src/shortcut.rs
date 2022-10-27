@@ -2,17 +2,27 @@
 
 use std::{fs, iter::Peekable, path::Path, slice::Iter};
 
+/// A added non-Steam game
+///
+/// Information is parsed from your `userdata/<user_id>/config/shortcuts.vdf` files
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct Shortcut {
+    /// Steam's provided app id
     pub appid: u32,
+    /// The name of the application
     pub app_name: String,
+    /// The executable used to launch the app
+    ///
+    /// This is either the name of the program or the full path to the program
     pub executable: String,
+    /// The directory that the application should be run in
     pub start_dir: String,
 }
 
 #[cfg(feature = "shortcuts_extras")]
 impl Shortcut {
+    /// Calculates the shortcut's Steam ID from the executable and app name
     pub fn steam_id(&self) -> u64 {
         let algorithm = crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
 
