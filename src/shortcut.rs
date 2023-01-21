@@ -66,7 +66,7 @@ pub fn discover_shortcuts(steam_dir: &Path) -> Vec<Shortcut> {
 /// Only works if the starting byte is not used anywhere else in the needle. This works well when
 /// finding keys since the starting byte indicates the type and wouldn't be used in the key
 #[must_use]
-fn after_many(it: &mut Peekable<Iter<u8>>, needle: &[u8]) -> bool {
+fn after_many_case_insensitive(it: &mut Peekable<Iter<u8>>, needle: &[u8]) -> bool {
     loop {
         loop {
             let mut needle_it = needle.iter();
@@ -75,15 +75,16 @@ fn after_many(it: &mut Peekable<Iter<u8>>, needle: &[u8]) -> bool {
                 None => return false,
             };
 
-            if Some(b) == needle_it.next() {
+            let maybe_needle_b = needle_it.next();
+            if maybe_u8_eq_ignore_ascii_case(maybe_needle_b, Some(&b)) {
                 loop {
                     if needle_it.len() == 0 {
                         return true;
                     }
 
-                    let b = it.peek();
-                    let needle_b = needle_it.next();
-                    if b == needle_b.as_ref() {
+                    let maybe_b = it.peek();
+                    let maybe_needle_b = needle_it.next();
+                    if maybe_u8_eq_ignore_ascii_case(maybe_needle_b, maybe_b.copied()) {
                         let _ = it.next();
                     } else {
                         break;
@@ -92,6 +93,13 @@ fn after_many(it: &mut Peekable<Iter<u8>>, needle: &[u8]) -> bool {
             }
         }
     }
+}
+
+fn maybe_u8_eq_ignore_ascii_case(maybe_b1: Option<&u8>, maybe_b2: Option<&u8>) -> bool {
+    maybe_b1
+        .zip(maybe_b2)
+        .map(|(b1, b2)| b1.eq_ignore_ascii_case(b2))
+        .unwrap_or_default()
 }
 
 fn parse_value_str(it: &mut Peekable<Iter<u8>>) -> Option<String> {
@@ -118,22 +126,22 @@ fn parse_shortcuts(contents: &[u8]) -> Option<Vec<Shortcut>> {
     let mut shortcuts = Vec::new();
 
     loop {
-        if !after_many(&mut it, b"\x02appid\x00") {
+        if !after_many_case_insensitive(&mut it, b"\x02appid\x00") {
             return Some(shortcuts);
         }
         let appid = parse_value_u32(&mut it)?;
 
-        if !after_many(&mut it, b"\x01AppName\x00") {
+        if !after_many_case_insensitive(&mut it, b"\x01AppName\x00") {
             return None;
         }
         let app_name = parse_value_str(&mut it)?;
 
-        if !after_many(&mut it, b"\x01Exe\x00") {
+        if !after_many_case_insensitive(&mut it, b"\x01Exe\x00") {
             return None;
         }
         let executable = parse_value_str(&mut it)?;
 
-        if !after_many(&mut it, b"\x01StartDir\x00") {
+        if !after_many_case_insensitive(&mut it, b"\x01StartDir\x00") {
             return None;
         }
         let start_dir = parse_value_str(&mut it)?;
@@ -178,6 +186,18 @@ mod tests {
                     start_dir: "\"/usr/local/bin/\"".into(),
                 }
             ],
+        );
+
+        let contents = include_bytes!("../tests/sample_data/shortcuts_different_key_case.vdf");
+        let shortcuts = parse_shortcuts(contents).unwrap();
+        assert_eq!(
+            shortcuts,
+            vec![Shortcut {
+                appid: 2931025216,
+                app_name: "Second Life".into(),
+                executable: "\"/Applications/Second Life Viewer.app\"".into(),
+                start_dir: "\"/Applications/\"".into(),
+            }]
         );
     }
 
