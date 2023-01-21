@@ -17,12 +17,12 @@ use keyvalues_parser::Vdf;
 /// ```
 /// ```ignore
 /// {
-///		"C:\\Program Files (x86)\\Steam\\steamapps",
-///		"D:\\Steam\\steamapps",
-///		"E:\\Steam\\steamapps",
-///		"F:\\Steam\\steamapps",
-///		...
-///	}
+///     "C:\\Program Files (x86)\\Steam\\steamapps",
+///     "D:\\Steam\\steamapps",
+///     "E:\\Steam\\steamapps",
+///     "F:\\Steam\\steamapps",
+///     ...
+/// }
 /// ```
 #[derive(Default, Clone, Debug)]
 pub struct LibraryFolders {

@@ -37,13 +37,13 @@
 //! use steamlocate::SteamDir;
 //!
 //! match SteamDir::locate() {
-//! 	Some(steamdir) => println!("{:#?}", steamdir),
-//! 	None => panic!("Couldn't locate Steam on this computer!")
+//!     Some(steamdir) => println!("{:#?}", steamdir),
+//!     None => panic!("Couldn't locate Steam on this computer!")
 //! }
 //! ```
 //! ```ignore
 //! SteamDir (
-//! 	path: PathBuf: "C:\\Program Files (x86)\\Steam"
+//!     path: PathBuf: "C:\\Program Files (x86)\\Steam"
 //! )
 //! ```
 //!
@@ -55,17 +55,17 @@
 //!
 //! let mut steamdir = SteamDir::locate().unwrap();
 //! match steamdir.app(&4000) {
-//! 	Some(app) => println!("{:#?}", app),
-//! 	None => panic!("Couldn't locate Garry's Mod on this computer!")
+//!     Some(app) => println!("{:#?}", app),
+//!     None => panic!("Couldn't locate Garry's Mod on this computer!")
 //! }
 //! ```
 //! ```ignore
 //! SteamApp (
-//! 	appid: u32: 4000,
-//! 	path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-//! 	vdf: <steamy_vdf::Table>,
-//! 	name: Some(String: "Garry's Mod"),
-//! 	last_user: Some(u64: 76561198040894045)
+//!     appid: u32: 4000,
+//!     path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
+//!     vdf: <steamy_vdf::Table>,
+//!     name: Some(String: "Garry's Mod"),
+//!     last_user: Some(u64: 76561198040894045)
 //! )
 //! ```
 //!
@@ -82,14 +82,14 @@
 //! ```
 //! ```ignore
 //! {
-//! 	4000: SteamApp (
-//! 		appid: u32: 4000,
-//! 		path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-//! 		vdf: <steamy_vdf::Table>,
-//! 		name: Some(String: "Garry's Mod"),
-//! 		last_user: Some(u64: 76561198040894045)
-//! 	)
-//! 	...
+//!     4000: SteamApp (
+//!         appid: u32: 4000,
+//!         path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
+//!         vdf: <steamy_vdf::Table>,
+//!         name: Some(String: "Garry's Mod"),
+//!         last_user: Some(u64: 76561198040894045)
+//!     )
+//!     ...
 //! }
 //! ```
 //!
@@ -107,11 +107,11 @@
 //! ```
 //! ```ignore
 //! {
-//! 	"C:\\Program Files (x86)\\Steam\\steamapps",
-//! 	"D:\\Steam\\steamapps",
-//! 	"E:\\Steam\\steamapps",
-//! 	"F:\\Steam\\steamapps",
-//! 	...
+//!     "C:\\Program Files (x86)\\Steam\\steamapps",
+//!     "D:\\Steam\\steamapps",
+//!     "E:\\Steam\\steamapps",
+//!     "F:\\Steam\\steamapps",
+//!     ...
 //! }
 //! ```
 
@@ -151,12 +151,12 @@ pub use shortcut::Shortcut;
 /// # Example
 /// ```rust
 /// # use steamlocate::SteamDir;
-///	let steamdir = SteamDir::locate();
+/// let steamdir = SteamDir::locate();
 /// println!("{:#?}", steamdir.unwrap());
 /// ```
 /// ```ignore
 /// SteamDir (
-/// 	path: "C:\\Program Files (x86)\\Steam"
+///     path: "C:\\Program Files (x86)\\Steam"
 /// )
 /// ```
 #[derive(Default, Clone, Debug)]
@@ -199,14 +199,14 @@ impl SteamDir {
     /// ```
     /// ```ignore
     /// {
-    /// 	4000: SteamApp (
-    /// 		appid: u32: 4000,
-    /// 		path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-    /// 		vdf: <steamy_vdf::Table>,
-    /// 		name: Some(String: "Garry's Mod"),
-    /// 		last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
-    /// 	)
-    /// 	...
+    ///     4000: SteamApp (
+    ///         appid: u32: 4000,
+    ///         path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
+    ///         vdf: <steamy_vdf::Table>,
+    ///         name: Some(String: "Garry's Mod"),
+    ///         last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
+    ///     )
+    ///     ...
     /// }
     /// ```
     pub fn apps(&mut self) -> &HashMap<u32, Option<SteamApp>> {
@@ -236,11 +236,11 @@ impl SteamDir {
     /// ```
     /// ```ignore
     /// SteamApp (
-    /// 	appid: u32: 4000,
-    /// 	path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-    /// 	vdf: <steamy_vdf::Table>,
-    /// 	name: Some(String: "Garry's Mod"),
-    /// 	last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
+    ///     appid: u32: 4000,
+    ///     path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
+    ///     vdf: <steamy_vdf::Table>,
+    ///     name: Some(String: "Garry's Mod"),
+    ///     last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
     /// )
     /// ```
     pub fn app(&mut self, app_id: &u32) -> Option<&SteamApp> {
@@ -251,7 +251,7 @@ impl SteamDir {
             if !libraryfolders.discovered {
                 libraryfolders.discover(&self.path);
             }
-            if let None = steam_apps.discover_app(libraryfolders, app_id) {
+            if steam_apps.discover_app(libraryfolders, app_id).is_none() {
                 steam_apps.apps.insert(*app_id, None);
             }
         }

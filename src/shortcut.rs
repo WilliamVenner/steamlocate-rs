@@ -42,7 +42,7 @@ pub fn discover_shortcuts(steam_dir: &Path) -> Vec<Shortcut> {
 
         // Find and parse each `userdata/<user_id>/config/shortcuts.vdf` file
         let user_data = steam_dir.join("userdata");
-        for entry in fs::read_dir(&user_data).ok()?.filter_map(|e| e.ok()) {
+        for entry in fs::read_dir(user_data).ok()?.filter_map(|e| e.ok()) {
             let shortcuts_path = entry.path().join("config").join("shortcuts.vdf");
             if !shortcuts_path.is_file() {
                 continue;
@@ -76,7 +76,7 @@ fn after_many_case_insensitive(it: &mut Peekable<Iter<u8>>, needle: &[u8]) -> bo
             };
 
             let maybe_needle_b = needle_it.next();
-            if maybe_u8_eq_ignore_ascii_case(maybe_needle_b, Some(&b)) {
+            if maybe_u8_eq_ignore_ascii_case(maybe_needle_b, Some(b)) {
                 loop {
                     if needle_it.len() == 0 {
                         return true;

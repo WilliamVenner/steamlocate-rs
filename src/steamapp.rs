@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// An instance of an installed Steam app.
 /// # Example
@@ -10,11 +10,11 @@ use std::path::PathBuf;
 /// ```
 /// ```ignore
 /// SteamApp (
-/// 	appid: u32: 4000,
-/// 	path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-/// 	vdf: <steamy_vdf::Table>,
-/// 	name: Some(String: "Garry's Mod"),
-/// 	last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
+///     appid: u32: 4000,
+///     path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
+///     vdf: <steamy_vdf::Table>,
+///     name: Some(String: "Garry's Mod"),
+///     last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
 /// )
 /// ```
 #[derive(Debug, Clone)]
@@ -47,7 +47,7 @@ pub struct SteamApp {
 }
 
 impl SteamApp {
-    pub(crate) fn new(steamapps: &PathBuf, vdf: &steamy_vdf::Table) -> Option<SteamApp> {
+    pub(crate) fn new(steamapps: &Path, vdf: &steamy_vdf::Table) -> Option<SteamApp> {
         // First check if the installation path exists and is a valid directory
         let install_dir = steamapps.join(vdf.get("installdir")?.as_str()?);
         if !install_dir.is_dir() {
@@ -64,7 +64,7 @@ impl SteamApp {
             // Get the name key, try and convert it into a String, if we fail, name = None
             name: vdf
                 .get("name")
-                .and_then(|entry| entry.as_str().and_then(|str| Some(str.to_string()))),
+                .and_then(|entry| entry.as_str().map(|str| str.to_string())),
 
             // Get the LastOwner key, try and convert it into a SteamID64, if we fail, last_user = None
             #[cfg(not(feature = "steamid_ng"))]
