@@ -2,6 +2,7 @@ use std::{
     collections::BTreeMap,
     fs,
     path::{Path, PathBuf},
+    time,
 };
 
 use serde::Deserialize;
@@ -24,6 +25,8 @@ use serde::Deserialize;
 /// )
 /// ```
 #[derive(Debug, Clone)]
+#[cfg_attr(test, derive(serde::Serialize))]
+#[non_exhaustive]
 pub struct SteamApp {
     /// The app ID of this Steam app.
     pub app_id: u32,
@@ -34,26 +37,27 @@ pub struct SteamApp {
     pub path: PathBuf,
 
     /// The store name of the Steam app.
-    pub name: String,
+    pub name: Option<String>,
 
-    pub universe: u64,
+    pub universe: Option<Universe>,
     pub launcher_path: Option<PathBuf>,
-    pub state_flags: u64,
-    pub last_updated: u64,
+    pub state_flags: Option<Vec<StateFlag>>,
+    pub last_updated: Option<time::SystemTime>,
+    // Can't find anything on what these values mean. I've seen 0, 2, 4, 6, and 7
     pub update_result: Option<u64>,
-    pub size_on_disk: u64,
-    pub build_id: u64,
+    pub size_on_disk: Option<u64>,
+    pub build_id: Option<u64>,
     pub bytes_to_download: Option<u64>,
     pub bytes_downloaded: Option<u64>,
     pub bytes_to_stage: Option<u64>,
     pub bytes_staged: Option<u64>,
     pub staging_size: Option<u64>,
     pub target_build_id: Option<u64>,
-    pub auto_update_behavior: u64,
-    pub allow_other_downloads_while_running: u64,
-    pub scheduled_auto_update: u64,
-    pub full_validate_before_next_update: Option<bool>,
-    pub full_validate_after_next_update: Option<bool>,
+    pub auto_update_behavior: AutoUpdateBehavior,
+    pub allow_other_downloads_while_running: AllowOtherDownloadsWhileRunning,
+    pub scheduled_auto_update: Option<time::SystemTime>,
+    pub full_validate_before_next_update: bool,
+    pub full_validate_after_next_update: bool,
     pub installed_depots: BTreeMap<u64, Depot>,
     pub staged_depots: BTreeMap<u64, Depot>,
     pub user_config: BTreeMap<String, String>,
@@ -67,17 +71,27 @@ pub struct SteamApp {
     /// This crate supports [steamid-ng](https://docs.rs/steamid-ng) and can automatically convert this to a [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) for you.
     ///
     /// To enable this support, [use the  `steamid_ng` Cargo.toml feature](https://docs.rs/steamlocate/*/steamlocate#using-steamlocate).
-    pub last_user: u64,
+    pub last_user: Option<u64>,
 
     #[cfg(feature = "steamid_ng")]
     /// The [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) of the last Steam user that played this game on the filesystem.
-    pub last_user: steamid_ng::SteamID,
+    pub last_user: Option<steamid_ng::SteamID>,
 }
 
 impl SteamApp {
     pub(crate) fn new(library_path: &Path, manifest: &Path) -> Option<Self> {
         let contents = fs::read_to_string(manifest).ok()?;
-        let InternalSteamApps {
+        let app = Self::from_manifest_str(library_path, &contents)?;
+
+        if app.path.is_dir() {
+            Some(app)
+        } else {
+            return None;
+        }
+    }
+
+    pub(crate) fn from_manifest_str(library_path: &Path, manifest: &str) -> Option<Self> {
+        let InternalSteamApp {
             app_id,
             universe,
             launcher_path,
@@ -106,16 +120,29 @@ impl SteamApp {
             mounted_config,
             install_scripts,
             shared_depots,
-        } = keyvalues_serde::from_str(&contents).ok()?;
+        } = keyvalues_serde::from_str(manifest).ok()?;
 
         // First check if the installation path exists and is a valid directory
         let path = library_path.join("common").join(install_dir);
-        if !path.is_dir() {
-            return None;
-        }
 
         #[cfg(feature = "steamid_ng")]
         let last_user = last_user.map(steamid_ng::SteamID::from);
+        let universe = universe.map(Universe::from);
+        let state_flags = state_flags.map(StateFlag::flags_from_packed);
+        let last_updated = last_updated.and_then(time_as_secs_from_unix_epoch);
+        let scheduled_auto_update = if scheduled_auto_update == Some(0) {
+            None
+        } else {
+            scheduled_auto_update.and_then(time_as_secs_from_unix_epoch)
+        };
+        let allow_other_downloads_while_running = allow_other_downloads_while_running
+            .map(AllowOtherDownloadsWhileRunning::from)
+            .unwrap_or_default();
+        let auto_update_behavior = auto_update_behavior
+            .map(AutoUpdateBehavior::from)
+            .unwrap_or_default();
+        let full_validate_before_next_update = full_validate_before_next_update.unwrap_or_default();
+        let full_validate_after_next_update = full_validate_after_next_update.unwrap_or_default();
 
         Some(Self {
             app_id,
@@ -150,7 +177,162 @@ impl SteamApp {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(test, derive(serde::Serialize))]
+pub enum Universe {
+    Invalid,
+    Public,
+    Beta,
+    Internal,
+    Dev,
+    Unknown(u64),
+}
+
+// More info: https://developer.valvesoftware.com/wiki/SteamID#Universes_Available_for_Steam_Accounts
+impl From<u64> for Universe {
+    fn from(value: u64) -> Self {
+        match value {
+            0 => Self::Invalid,
+            1 => Self::Public,
+            2 => Self::Beta,
+            3 => Self::Internal,
+            4 => Self::Dev,
+            unknown => Self::Unknown(unknown),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(test, derive(serde::Serialize))]
+pub enum StateFlag {
+    Invalid,
+    Uninstalled,
+    UpdateRequired,
+    FullyInstalled,
+    Encrypted,
+    Locked,
+    FilesMissing,
+    AppRunning,
+    FilesCorrupt,
+    UpdateRunning,
+    UpdatePaused,
+    UpdateStarted,
+    Uninstalling,
+    BackupRunning,
+    Reconfiguring,
+    Validating,
+    AddingFiles,
+    Preallocating,
+    Downloading,
+    Staging,
+    Committing,
+    UpdateStopping,
+    Unknown(u64),
+}
+
+// More info: https://github.com/lutris/lutris/blob/master/docs/steam.rst
+impl StateFlag {
+    fn flags_from_packed(bit_flags: u64) -> Vec<StateFlag> {
+        const FLAG_TO_MASK: &[(StateFlag, u64)] = &[
+            (StateFlag::Uninstalled, 1),
+            (StateFlag::UpdateRequired, 2),
+            (StateFlag::FullyInstalled, 4),
+            (StateFlag::Encrypted, 8),
+            (StateFlag::Locked, 16),
+            (StateFlag::FilesMissing, 32),
+            (StateFlag::AppRunning, 64),
+            (StateFlag::FilesCorrupt, 128),
+            (StateFlag::UpdateRunning, 256),
+            (StateFlag::UpdatePaused, 512),
+            (StateFlag::UpdateStarted, 1024),
+            (StateFlag::Uninstalling, 2048),
+            (StateFlag::BackupRunning, 4096),
+            (StateFlag::Reconfiguring, 65536),
+            (StateFlag::Validating, 131072),
+            (StateFlag::AddingFiles, 262144),
+            (StateFlag::Preallocating, 524288),
+            (StateFlag::Downloading, 1048576),
+            (StateFlag::Staging, 2097152),
+            (StateFlag::Committing, 4194304),
+            (StateFlag::UpdateStopping, 8388608),
+        ];
+        if bit_flags == 0 {
+            vec![StateFlag::Invalid]
+        } else {
+            FLAG_TO_MASK
+                .iter()
+                .filter_map(|&(flag, mask)| {
+                    if bit_flags & mask > 0 {
+                        Some(flag)
+                    } else {
+                        None
+                    }
+                })
+                .collect()
+        }
+    }
+}
+
+fn time_as_secs_from_unix_epoch(secs: u64) -> Option<time::SystemTime> {
+    let offset = time::Duration::from_secs(secs);
+    time::SystemTime::UNIX_EPOCH.checked_add(offset)
+}
+
+#[derive(Debug, Clone)]
+#[cfg_attr(test, derive(serde::Serialize))]
+pub enum AllowOtherDownloadsWhileRunning {
+    UseGlobalSetting,
+    Allow,
+    Never,
+    Unknown(u64),
+}
+
+impl From<u64> for AllowOtherDownloadsWhileRunning {
+    fn from(value: u64) -> Self {
+        match value {
+            0 => Self::UseGlobalSetting,
+            1 => Self::Allow,
+            2 => Self::Never,
+            unknown => Self::Unknown(unknown),
+        }
+    }
+}
+
+impl Default for AllowOtherDownloadsWhileRunning {
+    fn default() -> Self {
+        Self::UseGlobalSetting
+    }
+}
+
+#[derive(Debug, Clone)]
+#[cfg_attr(test, derive(serde::Serialize))]
+pub enum AutoUpdateBehavior {
+    KeepUpToDate,
+    OnlyUpdateOnLaunch,
+    UpdateWithHighPriority,
+    Unknown(u64),
+}
+
+impl From<u64> for AutoUpdateBehavior {
+    fn from(value: u64) -> Self {
+        match value {
+            0 => Self::KeepUpToDate,
+            1 => Self::OnlyUpdateOnLaunch,
+            2 => Self::UpdateWithHighPriority,
+            unknown => Self::Unknown(unknown),
+        }
+    }
+}
+
+impl Default for AutoUpdateBehavior {
+    fn default() -> Self {
+        Self::KeepUpToDate
+    }
+}
+
 #[derive(Clone, Copy, Debug, Deserialize)]
+#[cfg_attr(test, derive(serde::Serialize))]
+#[non_exhaustive]
 pub struct Depot {
     pub manifest: u64,
     pub size: u64,
@@ -159,28 +341,28 @@ pub struct Depot {
 }
 
 #[derive(Debug, Deserialize)]
-struct InternalSteamApps {
+struct InternalSteamApp {
     #[serde(rename = "appid")]
     app_id: u32,
-    #[serde(rename = "Universe")]
-    universe: u64,
-    #[serde(rename = "LauncherPath")]
-    launcher_path: Option<PathBuf>,
-    name: String,
-    #[serde(rename = "StateFlags")]
-    state_flags: u64,
     #[serde(rename = "installdir")]
     install_dir: String,
+    #[serde(rename = "Universe")]
+    universe: Option<u64>,
+    #[serde(rename = "LauncherPath")]
+    launcher_path: Option<PathBuf>,
+    name: Option<String>,
+    #[serde(rename = "StateFlags")]
+    state_flags: Option<u64>,
     #[serde(rename = "LastUpdated")]
-    last_updated: u64,
+    last_updated: Option<u64>,
     #[serde(rename = "UpdateResult")]
     update_result: Option<u64>,
     #[serde(rename = "SizeOnDisk")]
-    size_on_disk: u64,
+    size_on_disk: Option<u64>,
     #[serde(rename = "buildid")]
-    build_id: u64,
+    build_id: Option<u64>,
     #[serde(rename = "LastOwner")]
-    last_user: u64,
+    last_user: Option<u64>,
     #[serde(rename = "BytesToDownload")]
     bytes_to_download: Option<u64>,
     #[serde(rename = "BytesDownloaded")]
@@ -194,11 +376,11 @@ struct InternalSteamApps {
     #[serde(rename = "TargetBuildID")]
     target_build_id: Option<u64>,
     #[serde(rename = "AutoUpdateBehavior")]
-    auto_update_behavior: u64,
+    auto_update_behavior: Option<u64>,
     #[serde(rename = "AllowOtherDownloadsWhileRunning")]
-    allow_other_downloads_while_running: u64,
+    allow_other_downloads_while_running: Option<u64>,
     #[serde(rename = "ScheduledAutoUpdate")]
-    scheduled_auto_update: u64,
+    scheduled_auto_update: Option<u64>,
     #[serde(rename = "FullValidateBeforeNextUpdate")]
     full_validate_before_next_update: Option<bool>,
     #[serde(rename = "FullValidateAfterNextUpdate")]
@@ -215,4 +397,24 @@ struct InternalSteamApps {
     mounted_config: BTreeMap<String, String>,
     #[serde(default, rename = "InstallScripts")]
     install_scripts: BTreeMap<u64, PathBuf>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sanity() {
+        let manifest = include_str!("../tests/assets/appmanifest_230410.acf");
+        let app = SteamApp::from_manifest_str(Path::new("C:\\redact\\me"), manifest).unwrap();
+        // Redact the path because the path separator used is not cross-platform
+        insta::assert_ron_snapshot!(app, { ".path" => "[path]" });
+    }
+
+    #[test]
+    fn more_sanity() {
+        let manifest = include_str!("../tests/assets/appmanifest_599140.acf");
+        let app = SteamApp::from_manifest_str(Path::new("/redact/me"), manifest).unwrap();
+        insta::assert_ron_snapshot!(app, { ".path" => "[path]" });
+    }
 }

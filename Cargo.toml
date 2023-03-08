@@ -23,3 +23,6 @@ steamid-ng = { version = "1.*", optional = true }
 winreg = "0.*"
 [target.'cfg(not(target_os="windows"))'.dependencies]
 dirs = "3.*"
+
+[dev-dependencies]
+insta = { version = "1.28.0", features = ["redactions", "ron"] }

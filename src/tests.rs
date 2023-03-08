@@ -44,7 +44,7 @@ fn find_app() {
 fn app_details() {
     let mut steamdir = SteamDir::locate().unwrap();
     let steamapp = steamdir.app(&APP_ID).unwrap();
-    assert_eq!(steamapp.name, "Garry's Mod");
+    assert_eq!(steamapp.name.as_ref().unwrap(), "Garry's Mod");
 }
 
 #[test]
@@ -67,5 +67,5 @@ fn all_apps_get_one() {
 
     let steamapp = steamdir.app(&APP_ID).unwrap();
 
-    assert_eq!(steamapp.name, "Garry's Mod");
+    assert_eq!(steamapp.name.as_ref().unwrap(), "Garry's Mod");
 }
