@@ -17,11 +17,11 @@ use serde::Deserialize;
 /// ```
 /// ```ignore
 /// SteamApp (
-/// 	appid: u32: 4000,
-/// 	path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-/// 	vdf: <steamy_vdf::Table>,
-/// 	name: Some(String: "Garry's Mod"),
-/// 	last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
+///     appid: u32: 4000,
+///     path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
+///     vdf: <steamy_vdf::Table>,
+///     name: Some(String: "Garry's Mod"),
+///     last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
 /// )
 /// ```
 #[derive(Debug, Clone)]
@@ -83,6 +83,7 @@ impl SteamApp {
         let contents = fs::read_to_string(manifest).ok()?;
         let app = Self::from_manifest_str(library_path, &contents)?;
 
+        // Check if the installation path exists and is a valid directory
         if app.path.is_dir() {
             Some(app)
         } else {
@@ -122,7 +123,6 @@ impl SteamApp {
             shared_depots,
         } = keyvalues_serde::from_str(manifest).ok()?;
 
-        // First check if the installation path exists and is a valid directory
         let path = library_path.join("common").join(install_dir);
 
         #[cfg(feature = "steamid_ng")]
