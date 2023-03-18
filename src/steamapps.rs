@@ -56,7 +56,7 @@ impl SteamApps {
             let appmanifest_path = libraryfolder.join(format!("appmanifest_{}.acf", app_id));
             if appmanifest_path.is_file() {
                 self.apps
-                    .insert(*app_id, SteamApp::new(&libraryfolder, &appmanifest_path));
+                    .insert(*app_id, SteamApp::new(libraryfolder, &appmanifest_path));
 
                 return Some(());
             }

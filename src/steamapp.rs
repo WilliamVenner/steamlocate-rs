@@ -87,7 +87,7 @@ impl SteamApp {
         if app.path.is_dir() {
             Some(app)
         } else {
-            return None;
+            None
         }
     }
 
