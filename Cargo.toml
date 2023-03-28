@@ -16,8 +16,9 @@ shortcuts_extras = ["crc"]
 steamid_ng = ["steamid-ng"]
 
 [dependencies]
-steamy-vdf = "0.2"
 keyvalues-parser = "0.1"
+keyvalues-serde = "0.1"
+serde = { version = "1.0", features = ["derive"] }
 
 crc = { version = "3.0", optional = true }
 
@@ -27,3 +28,6 @@ steamid-ng = { version = "1", optional = true }
 winreg = "0.10"
 [target.'cfg(not(target_os="windows"))'.dependencies]
 dirs = "3"
+
+[dev-dependencies]
+insta = { version = "1.28.0", features = ["redactions", "ron"] }
