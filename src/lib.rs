@@ -313,13 +313,13 @@ impl SteamDir {
 
         // Find Library/Application Support/Steam
         let install_path = home_dir.join("Library/Application Support/Steam");
-        return match install_path.is_dir() {
+        match install_path.is_dir() {
             false => None,
             true => Some(SteamDir {
                 path: install_path,
                 ..Default::default()
             }),
-        };
+        }
     }
 
     /// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (Linux)

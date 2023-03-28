@@ -24,6 +24,6 @@ crc = { version = "3.0", optional = true }
 steamid-ng = { version = "1", optional = true }
 
 [target.'cfg(target_os="windows")'.dependencies]
-winreg = "0.10"
+winreg = "0.11"
 [target.'cfg(not(target_os="windows"))'.dependencies]
-dirs = "3"
+dirs = "5"
