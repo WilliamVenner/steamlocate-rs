@@ -133,11 +133,18 @@ pub mod steamapp;
 pub use steamapp::SteamApp;
 
 #[doc(hidden)]
+pub mod steamcompat;
+pub use steamcompat::SteamCompat;
+
+#[doc(hidden)]
 pub mod libraryfolders;
 pub use libraryfolders::LibraryFolders;
 
 mod steamapps;
 use steamapps::SteamApps;
+
+mod steamcompats;
+use steamcompats::SteamCompats;
 
 mod shortcut;
 pub use shortcut::Shortcut;
@@ -166,6 +173,7 @@ pub struct SteamDir {
     /// Example: `C:\Program Files (x86)\Steam`
     pub path: PathBuf,
     pub(crate) steam_apps: SteamApps,
+    pub(crate) steam_compat: SteamCompats,
     pub(crate) libraryfolders: LibraryFolders,
     pub(crate) shortcuts: Option<Vec<Shortcut>>,
 }
@@ -251,12 +259,25 @@ impl SteamDir {
             if !libraryfolders.discovered {
                 libraryfolders.discover(&self.path);
             }
-            if steam_apps.discover_app(libraryfolders, app_id).is_none() {
-                steam_apps.apps.insert(*app_id, None);
-            }
+            steam_apps.discover_app(libraryfolders, app_id);
         }
 
         steam_apps.apps.get(app_id).unwrap().as_ref()
+    }
+
+    /// Returns a `Some` reference to a `SteamCompat` via its app ID.
+    ///
+    /// If no compatibility tool is configured for the app, this will return `None`.
+    ///
+    /// This function will cache its (either `Some` and `None`) result and will always return a reference to the same `SteamCompat`.
+    pub fn compat_tool(&mut self, app_id: &u32) -> Option<&SteamCompat> {
+        let steam_compat = &mut self.steam_compat;
+
+        if !steam_compat.tools.contains_key(app_id) {
+            steam_compat.discover_tool(&self.path, app_id)
+        }
+
+        steam_compat.tools.get(app_id).unwrap().as_ref()
     }
 
     /// Returns a listing of all added non-Steam games
