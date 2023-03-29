@@ -136,6 +136,13 @@ pub use crate::error::{Error, Result};
 pub use crate::library::Library;
 pub use crate::shortcut::Shortcut;
 
+#[doc(hidden)]
+mod steamcompat;
+use steamcompat::SteamCompat;
+
+mod steamcompats;
+use steamcompats::SteamCompats;
+
 /// An instance of a Steam installation.
 ///
 /// All functions of this struct will cache their results.
@@ -202,6 +209,22 @@ impl InstallDir {
                 .find_map(|lib| lib.app(app_id))
                 .transpose(),
         }
+    }
+
+    /// Returns a `Some` reference to a `SteamCompat` via its app ID.
+    ///
+    /// If no compatibility tool is configured for the app, this will return `None`.
+    ///
+    /// This function will cache its (either `Some` and `None`) result and will always return a reference to the same `SteamCompat`.
+    pub fn compat_tool(&mut self, app_id: &u32) -> Option<&SteamCompat> {
+        todo!();
+        // let steam_compat = &mut self.steam_compat;
+
+        // if !steam_compat.tools.contains_key(app_id) {
+        //     steam_compat.discover_tool(&self.path, app_id)
+        // }
+
+        // steam_compat.tools.get(app_id).unwrap().as_ref()
     }
 
     /// Returns a listing of all added non-Steam games
