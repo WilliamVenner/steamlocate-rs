@@ -85,3 +85,16 @@ fn all_apps_get_one() {
     assert!(steamapp.unwrap().name.is_some());
     assert!(steamapp.unwrap().last_user.is_some());
 }
+
+#[test]
+fn find_compatibility_tool() {
+    let steamdir_found = SteamDir::locate();
+    assert!(steamdir_found.is_some());
+
+    let mut steamdir = steamdir_found.unwrap();
+
+    let tool = steamdir.compat_tool(&APP_ID);
+    assert!(tool.is_some());
+
+    println!("{:#?}", tool.unwrap());
+}
