@@ -262,7 +262,7 @@ impl SteamDir {
             steam_apps.discover_app(libraryfolders, app_id);
         }
 
-        steam_apps.apps.get(app_id).unwrap().as_ref()
+        steam_apps.apps.get(app_id).and_then(|app| app.as_ref())
     }
 
     /// Returns a `Some` reference to a `SteamCompat` via its app ID.
@@ -277,7 +277,10 @@ impl SteamDir {
             steam_compat.discover_tool(&self.path, app_id)
         }
 
-        steam_compat.tools.get(app_id).unwrap().as_ref()
+        steam_compat
+            .tools
+            .get(app_id)
+            .and_then(|compat_tool| compat_tool.as_ref())
     }
 
     /// Returns a listing of all added non-Steam games
