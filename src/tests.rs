@@ -37,7 +37,7 @@ fn find_app() {
     let steamapp = steamdir.app(&APP_ID);
     assert!(steamapp.is_some());
 
-    println!("{:#?}", steamapp.unwrap());
+    assert!(steamdir.app(&u32::MAX).is_none());
 }
 
 #[test]
