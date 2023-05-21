@@ -135,7 +135,7 @@ pub use steamapp::SteamApp;
 pub mod libraryfolders;
 pub use libraryfolders::{parse_library_folders, Library};
 
-mod shortcut;
+pub mod shortcut;
 pub use shortcut::Shortcut;
 
 /// An instance of a Steam installation.
@@ -158,8 +158,6 @@ pub use shortcut::Shortcut;
 #[derive(Clone, Debug)]
 pub struct SteamDir {
     path: PathBuf,
-    libraries: Vec<Library>,
-    shortcuts: Option<Vec<Shortcut>>,
 }
 
 impl SteamDir {
@@ -170,8 +168,9 @@ impl SteamDir {
         &self.path
     }
 
-    pub fn libraries(&self) -> &[Library] {
-        &self.libraries
+    pub fn libraries(&self) -> Option<Vec<Library>> {
+        let libraryfolders_vdf = self.path.join("steamapps").join("libraryfolders.vdf");
+        parse_library_folders(&libraryfolders_vdf)
     }
 
     /// Returns a `Some` reference to a `SteamApp` via its app ID.
@@ -198,17 +197,12 @@ impl SteamDir {
     /// ```
     pub fn app(&self, app_id: u32) -> Option<SteamApp> {
         // Search for the `app_id` in each library
-        self.libraries().iter().find_map(|lib| lib.app(app_id))
+        self.libraries()?.iter().find_map(|lib| lib.app(app_id))
     }
 
     /// Returns a listing of all added non-Steam games
-    pub fn shortcuts(&mut self) -> &[Shortcut] {
-        if self.shortcuts.is_none() {
-            let shortcuts = shortcut::discover_shortcuts(&self.path);
-            self.shortcuts = Some(shortcuts);
-        }
-
-        self.shortcuts.as_ref().unwrap()
+    pub fn shortcuts(&mut self) -> Option<shortcut::ShortcutIter> {
+        shortcut::ShortcutIter::new(&self.path)
     }
 
     /// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (Windows)
@@ -216,14 +210,8 @@ impl SteamDir {
     /// Returns `None` if no Steam installation can be located.
     pub fn locate() -> Option<SteamDir> {
         let path = Self::locate_steam_dir()?;
-        let libraryfolders_vdf = path.join("steamapps").join("libraryfolders.vdf");
-        let libraries = parse_library_folders(&libraryfolders_vdf)?;
 
-        Some(Self {
-            path,
-            libraries,
-            shortcuts: None,
-        })
+        Some(Self { path })
     }
 
     #[cfg(target_os = "windows")]

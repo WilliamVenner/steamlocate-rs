@@ -4,7 +4,7 @@ fn main() {
     let steamdir = SteamDir::locate().unwrap();
     println!("Steam Dir - {:?}", steamdir.path());
 
-    for library in steamdir.libraries() {
+    for library in steamdir.libraries().unwrap() {
         println!("    Library - {:?}", library.path());
         for app in library.apps() {
             match app {

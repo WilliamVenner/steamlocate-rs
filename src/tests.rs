@@ -15,7 +15,7 @@ fn find_steam() {
 #[test]
 fn find_library_folders() {
     let steam_dir = SteamDir::locate().unwrap();
-    assert!(steam_dir.libraries().len() > 1);
+    assert!(steam_dir.libraries().unwrap().len() > 1);
 }
 
 #[test]
@@ -35,10 +35,10 @@ fn app_details() {
 #[test]
 fn all_apps() {
     let steam_dir = SteamDir::locate().unwrap();
-    let steam_apps: Vec<_> = steam_dir
-        .libraries()
+    let libraries = steam_dir.libraries().unwrap();
+    let steam_apps: Vec<_> = libraries
         .iter()
-        .flat_map(Library::apps)
+        .flat_map(|lib| lib.apps())
         .collect::<Option<_>>()
         .unwrap();
     assert!(!steam_apps.is_empty());
@@ -49,10 +49,10 @@ fn all_apps() {
 fn all_apps_get_one() {
     let steam_dir = SteamDir::locate().unwrap();
 
-    let steam_apps: Vec<_> = steam_dir
-        .libraries()
+    let libraries = steam_dir.libraries().unwrap();
+    let steam_apps: Vec<_> = libraries
         .iter()
-        .flat_map(Library::apps)
+        .flat_map(|lib| lib.apps())
         .collect::<Option<_>>()
         .unwrap();
     assert!(!steam_apps.is_empty());
