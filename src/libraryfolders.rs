@@ -54,7 +54,7 @@ pub fn parse_library_folders(path: &Path) -> Option<Vec<Library>> {
         .filter(|(key, values)| key.parse::<u32>().is_ok() && values.len() == 1)
         .filter_map(|(_, values)| {
             let library_obj = values.get(0)?.get_obj()?;
-            Library::new(&library_obj)
+            Library::new(library_obj)
         })
         .collect();
 
