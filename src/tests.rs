@@ -22,15 +22,14 @@ fn find_library_folders() {
 fn find_app() {
     let steam_dir = SteamDir::locate().unwrap();
     let steam_app = steam_dir.app(APP_ID).unwrap();
-    assert_eq!(steam_app.appid, APP_ID);
+    assert_eq!(steam_app.app_id, APP_ID);
 }
 
 #[test]
 fn app_details() {
     let steam_dir = SteamDir::locate().unwrap();
     let steam_app = steam_dir.app(APP_ID).unwrap();
-    steam_app.name.unwrap();
-    steam_app.last_user.unwrap();
+    assert_eq!(steam_app.name.unwrap(), "Garry's Mod");
 }
 
 #[test]
@@ -63,7 +62,7 @@ fn all_apps_get_one() {
     assert_eq!(
         steam_apps
             .into_iter()
-            .find(|app| app.appid == APP_ID)
+            .find(|app| app.app_id == APP_ID)
             .unwrap(),
         steam_app
     );

@@ -1,0 +1,37 @@
+"AppState"
+{
+	"appid"		"230410"
+	"Universe"		"1"
+	"LauncherPath"		"C:\\Program Files (x86)\\Steam\\steam.exe"
+	"name"		"Warframe"
+	"StateFlags"		"4"
+	"installdir"		"Warframe"
+	"LastUpdated"		"1630871495"
+	"UpdateResult"		"2"
+	"SizeOnDisk"		"29070834580"
+	"buildid"		"6988007"
+	"LastOwner"		"12312312312312312"
+	"BytesToDownload"		"28490671360"
+	"BytesDownloaded"		"28490671360"
+	"BytesToStage"		"29070834580"
+	"BytesStaged"		"29070834580"
+	"AutoUpdateBehavior"		"0"
+	"AllowOtherDownloadsWhileRunning"		"0"
+	"ScheduledAutoUpdate"		"0"
+	"InstalledDepots"
+	{
+		"230411"
+		{
+			"manifest"		"1659398175797234554"
+			"size"		"29070834580"
+		}
+	}
+	"InstallScripts"
+	{
+		"230411"		"installscript.vdf"
+	}
+	"UserConfig"
+	{
+		"language"		"english"
+	}
+}

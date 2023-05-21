@@ -10,7 +10,7 @@ fn main() {
             match app {
                 Some(app) => println!(
                     "        App {} - {}",
-                    app.appid,
+                    app.app_id,
                     app.name.as_deref().unwrap_or("<no-name>")
                 ),
                 None => println!("        There was a FAILURE!"),

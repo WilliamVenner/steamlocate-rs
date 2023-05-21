@@ -108,7 +108,7 @@ impl Library {
                     .path()
                     .join("steamapps")
                     .join(format!("appmanifest_{}.acf", id));
-                SteamApp::new(&manifest_path)
+                SteamApp::new(&self.path, &manifest_path)
             })
     }
 

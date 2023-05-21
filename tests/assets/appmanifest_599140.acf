@@ -1,0 +1,38 @@
+"AppState"
+{
+	"appid"		"599140"
+	"Universe"		"1"
+	"name"		"Graveyard Keeper"
+	"StateFlags"		"6"
+	"installdir"		"Graveyard Keeper"
+	"LastUpdated"		"1672176869"
+	"SizeOnDisk"		"1805798572"
+	"StagingSize"		"0"
+	"buildid"		"8559806"
+	"LastOwner"		"12312312312312312"
+	"UpdateResult"		"0"
+	"BytesToDownload"		"24348080"
+	"BytesDownloaded"		"0"
+	"BytesToStage"		"1284862702"
+	"BytesStaged"		"0"
+	"TargetBuildID"		"8559806"
+	"AutoUpdateBehavior"		"1"
+	"AllowOtherDownloadsWhileRunning"		"1"
+	"ScheduledAutoUpdate"		"1678457806"
+	"InstalledDepots"
+	{
+		"599143"
+		{
+			"manifest"		"8776335556818666951"
+			"size"		"1805798572"
+		}
+	}
+	"UserConfig"
+	{
+		"language"		"english"
+	}
+	"MountedConfig"
+	{
+		"language"		"english"
+	}
+}

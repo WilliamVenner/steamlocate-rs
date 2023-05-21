@@ -37,13 +37,13 @@
 //! use steamlocate::SteamDir;
 //!
 //! match SteamDir::locate() {
-//! 	Some(steamdir) => println!("{:#?}", steamdir),
-//! 	None => panic!("Couldn't locate Steam on this computer!")
+//!     Some(steamdir) => println!("{:#?}", steamdir),
+//!     None => panic!("Couldn't locate Steam on this computer!")
 //! }
 //! ```
 //! ```ignore
 //! SteamDir (
-//! 	path: PathBuf: "C:\\Program Files (x86)\\Steam"
+//!     path: PathBuf: "C:\\Program Files (x86)\\Steam"
 //! )
 //! ```
 //!
@@ -55,17 +55,17 @@
 //!
 //! let mut steamdir = SteamDir::locate().unwrap();
 //! match steamdir.app(&4000) {
-//! 	Some(app) => println!("{:#?}", app),
-//! 	None => panic!("Couldn't locate Garry's Mod on this computer!")
+//!     Some(app) => println!("{:#?}", app),
+//!     None => panic!("Couldn't locate Garry's Mod on this computer!")
 //! }
 //! ```
 //! ```ignore
 //! SteamApp (
-//! 	appid: u32: 4000,
-//! 	path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-//! 	vdf: <steamy_vdf::Table>,
-//! 	name: Some(String: "Garry's Mod"),
-//! 	last_user: Some(u64: 76561198040894045)
+//!     appid: u32: 4000,
+//!     path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
+//!     vdf: <steamy_vdf::Table>,
+//!     name: Some(String: "Garry's Mod"),
+//!     last_user: Some(u64: 76561198040894045)
 //! )
 //! ```
 //!
@@ -82,14 +82,14 @@
 //! ```
 //! ```ignore
 //! {
-//! 	4000: SteamApp (
-//! 		appid: u32: 4000,
-//! 		path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-//! 		vdf: <steamy_vdf::Table>,
-//! 		name: Some(String: "Garry's Mod"),
-//! 		last_user: Some(u64: 76561198040894045)
-//! 	)
-//! 	...
+//!     4000: SteamApp (
+//!         appid: u32: 4000,
+//!         path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
+//!         vdf: <steamy_vdf::Table>,
+//!         name: Some(String: "Garry's Mod"),
+//!         last_user: Some(u64: 76561198040894045)
+//!     )
+//!     ...
 //! }
 //! ```
 //!
@@ -107,11 +107,11 @@
 //! ```
 //! ```ignore
 //! {
-//! 	"C:\\Program Files (x86)\\Steam\\steamapps",
-//! 	"D:\\Steam\\steamapps",
-//! 	"E:\\Steam\\steamapps",
-//! 	"F:\\Steam\\steamapps",
-//! 	...
+//!     "C:\\Program Files (x86)\\Steam\\steamapps",
+//!     "D:\\Steam\\steamapps",
+//!     "E:\\Steam\\steamapps",
+//!     "F:\\Steam\\steamapps",
+//!     ...
 //! }
 //! ```
 
@@ -128,13 +128,15 @@ use winreg::{
 #[cfg(not(target_os = "windows"))]
 extern crate dirs;
 
-#[doc(hidden)]
 pub mod steamapp;
 pub use steamapp::SteamApp;
 
 #[doc(hidden)]
 pub mod libraryfolders;
 pub use libraryfolders::{parse_library_folders, Library};
+
+mod shortcut;
+pub use shortcut::Shortcut;
 
 /// An instance of a Steam installation.
 ///
@@ -145,18 +147,19 @@ pub use libraryfolders::{parse_library_folders, Library};
 /// # Example
 /// ```rust
 /// # use steamlocate::SteamDir;
-///	let steamdir = SteamDir::locate();
+/// let steamdir = SteamDir::locate();
 /// println!("{:#?}", steamdir.unwrap());
 /// ```
 /// ```ignore
 /// SteamDir (
-/// 	path: "C:\\Program Files (x86)\\Steam"
+///     path: "C:\\Program Files (x86)\\Steam"
 /// )
 /// ```
 #[derive(Clone, Debug)]
 pub struct SteamDir {
     path: PathBuf,
     libraries: Vec<Library>,
+    shortcuts: Option<Vec<Shortcut>>,
 }
 
 impl SteamDir {
@@ -186,11 +189,11 @@ impl SteamDir {
     /// ```
     /// ```ignore
     /// SteamApp (
-    /// 	appid: u32: 4000,
-    /// 	path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-    /// 	vdf: <steamy_vdf::Table>,
-    /// 	name: Some(String: "Garry's Mod"),
-    /// 	last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
+    ///     appid: u32: 4000,
+    ///     path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
+    ///     vdf: <steamy_vdf::Table>,
+    ///     name: Some(String: "Garry's Mod"),
+    ///     last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
     /// )
     /// ```
     pub fn app(&self, app_id: u32) -> Option<SteamApp> {
@@ -198,7 +201,17 @@ impl SteamDir {
         self.libraries().iter().find_map(|lib| lib.app(app_id))
     }
 
-    /// Locates the Steam installation directory on the filesystem and initializes a `SteamDir`
+    /// Returns a listing of all added non-Steam games
+    pub fn shortcuts(&mut self) -> &[Shortcut] {
+        if self.shortcuts.is_none() {
+            let shortcuts = shortcut::discover_shortcuts(&self.path);
+            self.shortcuts = Some(shortcuts);
+        }
+
+        self.shortcuts.as_ref().unwrap()
+    }
+
+    /// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (Windows)
     ///
     /// Returns `None` if no Steam installation can be located.
     pub fn locate() -> Option<SteamDir> {
@@ -206,7 +219,11 @@ impl SteamDir {
         let libraryfolders_vdf = path.join("steamapps").join("libraryfolders.vdf");
         let libraries = parse_library_folders(&libraryfolders_vdf)?;
 
-        Some(Self { path, libraries })
+        Some(Self {
+            path,
+            libraries,
+            shortcuts: None,
+        })
     }
 
     #[cfg(target_os = "windows")]
@@ -249,9 +266,22 @@ impl SteamDir {
         // Steam's installation location is pretty easy to find on Linux, too, thanks to the symlink in $USER
         let home_dir = dirs::home_dir()?;
 
-        // Find .steam/steam
-        let install_path = home_dir.join(".steam/steam");
-        install_path.is_dir().then(|| install_path)
+        // Check for Flatpak steam install
+        let steam_flatpak_path = home_dir.join(".var/app/com.valvesoftware.Steam");
+        if steam_flatpak_path.is_dir() {
+            let steam_flatpak_install_path = steam_flatpak_path.join(".steam/steam");
+            if steam_flatpak_install_path.is_dir() {
+                return Some(steam_flatpak_install_path);
+            }
+        }
+
+        // Check for Standard steam install
+        let standard_path = home_dir.join(".steam/steam");
+        if standard_path.is_dir() {
+            return Some(standard_path);
+        }
+
+        None
     }
 }
 
