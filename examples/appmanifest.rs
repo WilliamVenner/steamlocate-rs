@@ -5,13 +5,13 @@ use steamlocate::SteamDir;
 fn main() {
     let args: Vec<_> = env::args().collect();
     if args.len() != 2 || args[1].parse::<u32>().is_err() {
-        eprintln!("Usage: ./single_app <STEAM_APP_ID>");
+        eprintln!("Usage: cargo run --example appmanifest -- <STEAM_APP_ID>");
         exit(1);
     }
-    let app_id: u32 = args[1].parse().unwrap();
+    let app_id: u32 = args[1].parse().expect("<STEAM_APP_ID> should be a u32");
 
-    let mut steamdir = SteamDir::locate().unwrap();
-    match steamdir.app(&app_id) {
+    let steam_dir = SteamDir::locate().unwrap();
+    match steam_dir.app(app_id) {
         Some(app) => println!("Found app - {:#?}", app),
         None => println!("No app found for {}", app_id),
     }
