@@ -1,6 +1,6 @@
 //! **WARN:** This is all hacky and should be replaced with proper binary VDF parsing
 
-use std::{fs, iter::Peekable, path::Path, slice::Iter};
+use std::{fs, io, iter::Peekable, path::Path, slice::Iter};
 
 /// A added non-Steam game
 ///
@@ -35,30 +35,57 @@ impl Shortcut {
     }
 }
 
-/// Discovers any shorcuts stored within `userdata`
-pub fn discover_shortcuts(steam_dir: &Path) -> Vec<Shortcut> {
-    fn inner(steam_dir: &Path) -> Option<Vec<Shortcut>> {
-        let mut shortcuts = Vec::new();
+pub struct ShortcutIter {
+    read_dir: fs::ReadDir,
+    pending: std::vec::IntoIter<Shortcut>,
+}
 
-        // Find and parse each `userdata/<user_id>/config/shortcuts.vdf` file
+impl ShortcutIter {
+    pub(crate) fn new(steam_dir: &Path) -> Option<Self> {
         let user_data = steam_dir.join("userdata");
-        for entry in fs::read_dir(user_data).ok()?.filter_map(|e| e.ok()) {
-            let shortcuts_path = entry.path().join("config").join("shortcuts.vdf");
-            if !shortcuts_path.is_file() {
-                continue;
+        let read_dir = fs::read_dir(user_data).ok()?;
+        Some(Self {
+            read_dir,
+            pending: Vec::new().into_iter(),
+        })
+    }
+}
+
+impl Iterator for ShortcutIter {
+    type Item = Option<Shortcut>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if self.pending.len() > 0 {
+                return Some(Some(self.pending.next().expect("We just checked len")));
             }
 
-            if let Ok(contents) = fs::read(&shortcuts_path) {
-                if let Some(parsed) = parse_shortcuts(&contents) {
-                    shortcuts.extend(parsed);
+            // Need to parse the next set of pending shortcuts
+            let maybe_entry = self.read_dir.next()?;
+            match maybe_entry {
+                Ok(entry) => {
+                    let shortcuts_path = entry.path().join("config").join("shortcuts.vdf");
+                    match fs::read(&shortcuts_path) {
+                        Ok(contents) => {
+                            if let Some(parsed) = parse_shortcuts(&contents) {
+                                self.pending = parsed.into_iter();
+                                continue;
+                            }
+                        }
+                        Err(e) => {
+                            // Not every directory in here has a shortcuts file
+                            if e.kind() == io::ErrorKind::NotFound {
+                                continue;
+                            } else {
+                                return Some(None);
+                            }
+                        }
+                    }
                 }
+                Err(_) => return Some(None),
             }
         }
-
-        Some(shortcuts)
     }
-
-    inner(steam_dir).unwrap_or_default()
 }
 
 /// Advances `it` until right after the matching `needle`
@@ -119,8 +146,6 @@ fn parse_value_u32(it: &mut Peekable<Iter<u8>>) -> Option<u32> {
     Some(u32::from_le_bytes(bytes))
 }
 
-// The performance of this is likely terrible, but also the files we're parsing are tiny so it
-// won't matter
 fn parse_shortcuts(contents: &[u8]) -> Option<Vec<Shortcut>> {
     let mut it = contents.iter().peekable();
     let mut shortcuts = Vec::new();

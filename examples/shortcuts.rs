@@ -2,6 +2,11 @@
 
 fn main() {
     let mut steamdir = steamlocate::SteamDir::locate().unwrap();
-    let shortcuts = steamdir.shortcuts();
-    println!("Shortcuts - {:#?}", shortcuts);
+    println!("Shortcuts:");
+    for maybe_shortcut in steamdir.shortcuts().unwrap() {
+        match maybe_shortcut {
+            Some(shortcut) => println!("    - {} {}", shortcut.appid, shortcut.app_name),
+            None => println!("Failed reading potential shortcut"),
+        }
+    }
 }

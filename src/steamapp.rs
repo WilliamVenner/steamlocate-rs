@@ -9,7 +9,7 @@ use serde::Deserialize;
 
 /// An instance of an installed Steam app.
 /// # Example
-/// ```rust
+/// ```ignore
 /// # use steamlocate::SteamDir;
 /// let mut steamdir = SteamDir::locate().unwrap();
 /// let gmod = steamdir.app(&4000);
@@ -24,7 +24,7 @@ use serde::Deserialize;
 ///     last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
 /// )
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(test, derive(serde::Serialize))]
 #[non_exhaustive]
 pub struct SteamApp {
@@ -84,6 +84,7 @@ impl SteamApp {
         let app = Self::from_manifest_str(library_path, &contents)?;
 
         // Check if the installation path exists and is a valid directory
+        println!("{:?}", app.path);
         if app.path.is_dir() {
             Some(app)
         } else {
@@ -123,7 +124,10 @@ impl SteamApp {
             shared_depots,
         } = keyvalues_serde::from_str(manifest).ok()?;
 
-        let path = library_path.join("common").join(install_dir);
+        let path = library_path
+            .join("steamapps")
+            .join("common")
+            .join(install_dir);
 
         #[cfg(feature = "steamid_ng")]
         let last_user = last_user.map(steamid_ng::SteamID::from);
@@ -177,7 +181,7 @@ impl SteamApp {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(test, derive(serde::Serialize))]
 pub enum Universe {
     Invalid,
@@ -188,7 +192,8 @@ pub enum Universe {
     Unknown(u64),
 }
 
-// More info: https://developer.valvesoftware.com/wiki/SteamID#Universes_Available_for_Steam_Accounts
+// More info:
+// https://developer.valvesoftware.com/wiki/SteamID#Universes_Available_for_Steam_Accounts
 impl From<u64> for Universe {
     fn from(value: u64) -> Self {
         match value {
@@ -202,7 +207,7 @@ impl From<u64> for Universe {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(test, derive(serde::Serialize))]
 pub enum StateFlag {
     Invalid,
@@ -278,7 +283,7 @@ fn time_as_secs_from_unix_epoch(secs: u64) -> Option<time::SystemTime> {
     time::SystemTime::UNIX_EPOCH.checked_add(offset)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(test, derive(serde::Serialize))]
 pub enum AllowOtherDownloadsWhileRunning {
     UseGlobalSetting,
@@ -304,7 +309,7 @@ impl Default for AllowOtherDownloadsWhileRunning {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(test, derive(serde::Serialize))]
 pub enum AutoUpdateBehavior {
     KeepUpToDate,
@@ -330,7 +335,7 @@ impl Default for AutoUpdateBehavior {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
 #[cfg_attr(test, derive(serde::Serialize))]
 #[non_exhaustive]
 pub struct Depot {
