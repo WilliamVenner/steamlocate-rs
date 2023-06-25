@@ -120,13 +120,23 @@ compile_error!("Unsupported operating system!");
 
 use std::path::{Path, PathBuf};
 
+use libraryfolders::LibraryIter;
 #[cfg(target_os = "windows")]
 use winreg::{
     enums::{HKEY_LOCAL_MACHINE, KEY_READ},
     RegKey,
 };
+// TODO: shouldn't be needed?
 #[cfg(not(target_os = "windows"))]
 extern crate dirs;
+
+// TODO: rework all of these re-exports
+// TODO: keep these errors in a separate module
+pub mod error;
+pub use error::{Error, ParseError, Result};
+
+#[cfg(test)]
+mod tests;
 
 pub mod steamapp;
 pub use steamapp::SteamApp;
@@ -168,7 +178,7 @@ impl SteamDir {
         &self.path
     }
 
-    pub fn libraries(&self) -> Option<Vec<Library>> {
+    pub fn libraries(&self) -> Result<LibraryIter> {
         let libraryfolders_vdf = self.path.join("steamapps").join("libraryfolders.vdf");
         parse_library_folders(&libraryfolders_vdf)
     }
@@ -195,23 +205,29 @@ impl SteamDir {
     ///     last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
     /// )
     /// ```
-    pub fn app(&self, app_id: u32) -> Option<SteamApp> {
+    pub fn app(&self, app_id: u32) -> Result<Option<SteamApp>> {
         // Search for the `app_id` in each library
-        self.libraries()?.iter().find_map(|lib| lib.app(app_id))
+        match self.libraries() {
+            Err(e) => Err(e),
+            Ok(libraries) => libraries
+                .filter_map(|library| library.ok())
+                .find_map(|lib| lib.app(app_id))
+                .transpose(),
+        }
     }
 
     /// Returns a listing of all added non-Steam games
-    pub fn shortcuts(&mut self) -> Option<shortcut::ShortcutIter> {
+    pub fn shortcuts(&mut self) -> Result<shortcut::ShortcutIter> {
         shortcut::ShortcutIter::new(&self.path)
     }
 
     /// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (Windows)
     ///
     /// Returns `None` if no Steam installation can be located.
-    pub fn locate() -> Option<SteamDir> {
-        let path = Self::locate_steam_dir()?;
+    pub fn locate() -> Result<SteamDir> {
+        let path = Self::locate_steam_dir().ok_or(Error::FailedLocatingSteamDir)?;
 
-        Some(Self { path })
+        Ok(Self { path })
     }
 
     #[cfg(target_os = "windows")]
@@ -272,6 +288,3 @@ impl SteamDir {
         None
     }
 }
-
-#[cfg(test)]
-mod tests;
