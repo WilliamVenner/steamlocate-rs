@@ -2,6 +2,8 @@
 
 use std::{fs, io, iter::Peekable, path::Path, slice::Iter};
 
+use crate::{error::ParseErrorKind, Error, ParseError, Result};
+
 /// A added non-Steam game
 ///
 /// Information is parsed from your `userdata/<user_id>/config/shortcuts.vdf` files
@@ -41,10 +43,17 @@ pub struct ShortcutIter {
 }
 
 impl ShortcutIter {
-    pub(crate) fn new(steam_dir: &Path) -> Option<Self> {
+    pub(crate) fn new(steam_dir: &Path) -> Result<Self> {
         let user_data = steam_dir.join("userdata");
-        let read_dir = fs::read_dir(user_data).ok()?;
-        Some(Self {
+        if !user_data.is_dir() {
+            return Err(Error::parse(
+                ParseErrorKind::Shortcut,
+                ParseError::missing(),
+            ));
+        }
+
+        let read_dir = fs::read_dir(user_data).map_err(Error::Io)?;
+        Ok(Self {
             read_dir,
             pending: Vec::new().into_iter(),
         })
@@ -52,12 +61,12 @@ impl ShortcutIter {
 }
 
 impl Iterator for ShortcutIter {
-    type Item = Option<Shortcut>;
+    type Item = Result<Shortcut>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            if self.pending.len() > 0 {
-                return Some(Some(self.pending.next().expect("We just checked len")));
+        let item = loop {
+            if let Some(shortcut) = self.pending.next() {
+                break Ok(shortcut);
             }
 
             // Need to parse the next set of pending shortcuts
@@ -67,24 +76,31 @@ impl Iterator for ShortcutIter {
                     let shortcuts_path = entry.path().join("config").join("shortcuts.vdf");
                     match fs::read(&shortcuts_path) {
                         Ok(contents) => {
-                            if let Some(parsed) = parse_shortcuts(&contents) {
-                                self.pending = parsed.into_iter();
-                                continue;
-                            }
-                        }
-                        Err(e) => {
-                            // Not every directory in here has a shortcuts file
-                            if e.kind() == io::ErrorKind::NotFound {
+                            if let Some(shortcuts) = parse_shortcuts(&contents) {
+                                self.pending = shortcuts.into_iter();
                                 continue;
                             } else {
-                                return Some(None);
+                                break Err(Error::parse(
+                                    ParseErrorKind::Shortcut,
+                                    ParseError::unexpected_structure(),
+                                ));
+                            }
+                        }
+                        Err(err) => {
+                            // Not every directory in here has a shortcuts file
+                            if err.kind() == io::ErrorKind::NotFound {
+                                continue;
+                            } else {
+                                break Err(Error::Io(err));
                             }
                         }
                     }
                 }
-                Err(_) => return Some(None),
+                Err(err) => break Err(Error::Io(err)),
             }
-        }
+        };
+
+        Some(item)
     }
 }
 

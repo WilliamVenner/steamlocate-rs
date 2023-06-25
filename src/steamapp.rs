@@ -5,6 +5,8 @@ use std::{
     time,
 };
 
+use crate::{error::ParseErrorKind, Error, ParseError, Result};
+
 use serde::Deserialize;
 
 /// An instance of an installed Steam app.
@@ -79,20 +81,22 @@ pub struct SteamApp {
 }
 
 impl SteamApp {
-    pub(crate) fn new(library_path: &Path, manifest: &Path) -> Option<Self> {
-        let contents = fs::read_to_string(manifest).ok()?;
+    pub(crate) fn new(library_path: &Path, manifest: &Path) -> Result<Self> {
+        let contents = fs::read_to_string(manifest).map_err(Error::Io)?;
         let app = Self::from_manifest_str(library_path, &contents)?;
 
         // Check if the installation path exists and is a valid directory
+        // TODO: lint against printing
         println!("{:?}", app.path);
         if app.path.is_dir() {
-            Some(app)
+            Ok(app)
         } else {
-            None
+            // TODO: app id here
+            Err(Error::MissingExpectedApp { app_id: 1 })
         }
     }
 
-    pub(crate) fn from_manifest_str(library_path: &Path, manifest: &str) -> Option<Self> {
+    pub(crate) fn from_manifest_str(library_path: &Path, manifest: &str) -> Result<Self> {
         let InternalSteamApp {
             app_id,
             universe,
@@ -122,7 +126,10 @@ impl SteamApp {
             mounted_config,
             install_scripts,
             shared_depots,
-        } = keyvalues_serde::from_str(manifest).ok()?;
+        } = keyvalues_serde::from_str(manifest).map_err(|err| Error::Parse {
+            kind: ParseErrorKind::SteamApp,
+            error: ParseError::from_serde(err),
+        })?;
 
         let path = library_path
             .join("steamapps")
@@ -148,7 +155,7 @@ impl SteamApp {
         let full_validate_before_next_update = full_validate_before_next_update.unwrap_or_default();
         let full_validate_after_next_update = full_validate_after_next_update.unwrap_or_default();
 
-        Some(Self {
+        Ok(Self {
             app_id,
             universe,
             launcher_path,
@@ -232,6 +239,7 @@ pub enum StateFlag {
     Staging,
     Committing,
     UpdateStopping,
+    // TODO: should this just store the bit offset?
     Unknown(u64),
 }
 
@@ -270,6 +278,7 @@ impl StateFlag {
                     if bit_flags & mask > 0 {
                         Some(flag)
                     } else {
+                        // TODO: this should be `Unknown`
                         None
                     }
                 })
