@@ -283,14 +283,8 @@ impl SteamDir {
             home_dir.join(".steam"),
         ];
 
-        match steam_paths
+        steam_paths
             .into_iter()
-            .find(|x| x.is_dir()) {
-            Some(path) => Some(SteamDir {
-                path,
-                ..Default::default()
-            }),
-            None => None,
-        }
+            .find(|x| x.is_dir())
     }
 }
