@@ -275,7 +275,6 @@ impl SteamDir {
             home_dir.join(".var/app/com.valvesoftware.Steam/.local/share/Steam"),
             home_dir.join(".var/app/com.valvesoftware.Steam/.steam/steam"),
             home_dir.join(".var/app/com.valvesoftware.Steam/.steam/root"),
-
             // Standard install directories
             home_dir.join(".local/share/Steam"),
             home_dir.join(".steam/steam"),
@@ -283,8 +282,6 @@ impl SteamDir {
             home_dir.join(".steam"),
         ];
 
-        steam_paths
-            .into_iter()
-            .find(|x| x.is_dir())
+        steam_paths.into_iter().find(|x| x.is_dir())
     }
 }
