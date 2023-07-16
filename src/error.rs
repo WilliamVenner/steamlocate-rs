@@ -1,8 +1,13 @@
+use std::fmt;
+
 pub type Result<T> = std::result::Result<T, Error>;
 
+#[derive(Debug)]
 pub enum Error {
     FailedLocatingSteamDir,
+    // TODO: make more specific and associate with a path?
     Io(std::io::Error),
+    // TODO: associate with a path
     Parse {
         kind: ParseErrorKind,
         error: ParseError,
@@ -12,20 +17,40 @@ pub enum Error {
     },
 }
 
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::FailedLocatingSteamDir => f.write_str("Failed locating the steam dir"),
+            Self::Io(err) => write!(f, "Encountered an I/O error: {}", err),
+            Self::Parse { kind, error } => write!(
+                f,
+                "Failed parsing VDF file. File kind: {:?}, Error: {}",
+                kind, error
+            ),
+            Self::MissingExpectedApp { app_id } => {
+                write!(f, "Missing expected app with id: {}", app_id)
+            }
+        }
+    }
+}
+
+impl std::error::Error for Error {}
+
 impl Error {
     pub(crate) fn parse(kind: ParseErrorKind, error: ParseError) -> Self {
         Self::Parse { kind, error }
     }
 }
 
-// TODO: rename to something like target?
 #[derive(Copy, Clone, Debug)]
+#[non_exhaustive]
 pub enum ParseErrorKind {
     LibaryFolders,
     SteamApp,
     Shortcut,
 }
 
+#[derive(Debug)]
 pub struct ParseError {
     // Keep `keyvalues_parser` and `keyvalues_serde` types out of the public API (this includes
     // from traits, so no using `thiserror` with `#[from]`)
@@ -33,11 +58,29 @@ pub struct ParseError {
     inner: Box<ParseErrorInner>,
 }
 
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.inner)
+    }
+}
+
+#[derive(Debug)]
 pub enum ParseErrorInner {
     Parse(keyvalues_parser::error::Error),
     Serde(keyvalues_serde::error::Error),
     UnexpectedStructure,
     Missing,
+}
+
+impl fmt::Display for ParseErrorInner {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Parse(err) => write!(f, "{}", err),
+            Self::Serde(err) => write!(f, "{}", err),
+            Self::UnexpectedStructure => f.write_str("File did not match expected structure"),
+            Self::Missing => f.write_str("Expected file was missing"),
+        }
+    }
 }
 
 impl ParseError {
