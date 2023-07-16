@@ -67,17 +67,12 @@ pub struct SteamApp {
     pub install_scripts: BTreeMap<u64, PathBuf>,
     pub shared_depots: BTreeMap<u64, u64>,
 
-    #[cfg(not(feature = "steamid_ng"))]
     /// The SteamID64 of the last Steam user that played this game on the filesystem.
     ///
     /// This crate supports [steamid-ng](https://docs.rs/steamid-ng) and can automatically convert this to a [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) for you.
     ///
     /// To enable this support, [use the  `steamid_ng` Cargo.toml feature](https://docs.rs/steamlocate/*/steamlocate#using-steamlocate).
     pub last_user: Option<u64>,
-
-    #[cfg(feature = "steamid_ng")]
-    /// The [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) of the last Steam user that played this game on the filesystem.
-    pub last_user: Option<steamid_ng::SteamID>,
 }
 
 impl SteamApp {
@@ -136,8 +131,6 @@ impl SteamApp {
             .join("common")
             .join(install_dir);
 
-        #[cfg(feature = "steamid_ng")]
-        let last_user = last_user.map(steamid_ng::SteamID::from);
         let universe = universe.map(Universe::from);
         let state_flags = state_flags.map(StateFlag::flags_from_packed);
         let last_updated = last_updated.and_then(time_as_secs_from_unix_epoch);
