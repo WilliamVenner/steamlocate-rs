@@ -34,10 +34,10 @@ fn find_app() {
 
     let mut steamdir = steamdir_found.unwrap();
 
-    let steamapp = steamdir.app(&APP_ID);
+    let steamapp = steamdir.app(APP_ID);
     assert!(steamapp.is_some());
 
-    assert!(steamdir.app(&u32::MAX).is_none());
+    assert!(steamdir.app(u32::MAX).is_none());
 }
 
 #[test]
@@ -47,7 +47,7 @@ fn app_details() {
 
     let mut steamdir = steamdir_found.unwrap();
 
-    let steamapp = steamdir.app(&APP_ID);
+    let steamapp = steamdir.app(APP_ID);
     assert!(steamapp.is_some());
 
     assert!(steamapp.unwrap().name.is_some());
@@ -79,7 +79,7 @@ fn all_apps_get_one() {
     assert!(!steamapps.is_empty());
     assert!(steamapps.keys().len() > 1);
 
-    let steamapp = steamdir.app(&APP_ID);
+    let steamapp = steamdir.app(APP_ID);
     assert!(steamapp.is_some());
 
     assert!(steamapp.unwrap().name.is_some());
@@ -93,7 +93,7 @@ fn find_compatibility_tool() {
 
     let mut steamdir = steamdir_found.unwrap();
 
-    let tool = steamdir.compat_tool(&APP_ID);
+    let tool = steamdir.compat_tool(APP_ID);
     assert!(tool.is_some());
 
     println!("{:#?}", tool.unwrap());

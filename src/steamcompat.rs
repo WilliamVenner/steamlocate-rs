@@ -44,7 +44,7 @@ pub struct SteamCompat {
 }
 
 impl SteamCompat {
-    pub(crate) fn new(steamdir: &Path, app_id: &u32) -> Option<SteamCompat> {
+    pub(crate) fn new(steamdir: &Path, app_id: u32) -> Option<SteamCompat> {
         let steamdir_config_path = steamdir.join("config").join("config.vdf");
 
         let vdf_text = fs::read_to_string(steamdir_config_path).ok()?;

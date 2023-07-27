@@ -8,8 +8,8 @@ pub(crate) struct SteamCompats {
 }
 
 impl SteamCompats {
-    pub(crate) fn discover_tool(&mut self, steamdir: &Path, app_id: &u32) {
+    pub(crate) fn discover_tool(&mut self, steamdir: &Path, app_id: u32) {
         self.tools
-            .insert(*app_id, SteamCompat::new(steamdir, app_id));
+            .insert(app_id, SteamCompat::new(steamdir, app_id));
     }
 }

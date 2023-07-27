@@ -61,7 +61,7 @@ impl SteamApps {
     pub(crate) fn discover_app(
         &mut self,
         libraryfolders: &LibraryFolders,
-        app_id: &u32,
+        app_id: u32,
     ) -> Option<()> {
         for libraryfolder in &libraryfolders.paths {
             let mut appmanifest_path = libraryfolder.join(format!("appmanifest_{}.acf", app_id));
@@ -72,7 +72,7 @@ impl SteamApps {
                 appmanifest_path.push("common");
 
                 self.apps.insert(
-                    *app_id,
+                    app_id,
                     SteamApp::new(
                         &appmanifest_path,
                         appmanifest_vdf.get("AppState")?.as_table()?,

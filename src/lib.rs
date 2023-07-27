@@ -54,7 +54,7 @@
 //! use steamlocate::SteamDir;
 //!
 //! let mut steamdir = SteamDir::locate().unwrap();
-//! match steamdir.app(&4000) {
+//! match steamdir.app(4000) {
 //!     Some(app) => println!("{:#?}", app),
 //!     None => panic!("Couldn't locate Garry's Mod on this computer!")
 //! }
@@ -239,7 +239,7 @@ impl SteamDir {
     /// ```rust
     /// # use steamlocate::SteamDir;
     /// let mut steamdir = SteamDir::locate().unwrap();
-    /// let gmod = steamdir.app(&4000);
+    /// let gmod = steamdir.app(4000);
     /// println!("{:#?}", gmod.unwrap());
     /// ```
     /// ```ignore
@@ -251,10 +251,10 @@ impl SteamDir {
     ///     last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
     /// )
     /// ```
-    pub fn app(&mut self, app_id: &u32) -> Option<&SteamApp> {
+    pub fn app(&mut self, app_id: u32) -> Option<&SteamApp> {
         let steam_apps = &mut self.steam_apps;
 
-        if !steam_apps.apps.contains_key(app_id) {
+        if !steam_apps.apps.contains_key(&app_id) {
             let libraryfolders = &mut self.libraryfolders;
             if !libraryfolders.discovered {
                 libraryfolders.discover(&self.path);
@@ -262,7 +262,7 @@ impl SteamDir {
             steam_apps.discover_app(libraryfolders, app_id);
         }
 
-        steam_apps.apps.get(app_id).and_then(|app| app.as_ref())
+        steam_apps.apps.get(&app_id).and_then(|app| app.as_ref())
     }
 
     /// Returns a `Some` reference to a `SteamCompat` via its app ID.
@@ -270,16 +270,16 @@ impl SteamDir {
     /// If no compatibility tool is configured for the app, this will return `None`.
     ///
     /// This function will cache its (either `Some` and `None`) result and will always return a reference to the same `SteamCompat`.
-    pub fn compat_tool(&mut self, app_id: &u32) -> Option<&SteamCompat> {
+    pub fn compat_tool(&mut self, app_id: u32) -> Option<&SteamCompat> {
         let steam_compat = &mut self.steam_compat;
 
-        if !steam_compat.tools.contains_key(app_id) {
+        if !steam_compat.tools.contains_key(&app_id) {
             steam_compat.discover_tool(&self.path, app_id)
         }
 
         steam_compat
             .tools
-            .get(app_id)
+            .get(&app_id)
             .and_then(|compat_tool| compat_tool.as_ref())
     }
 

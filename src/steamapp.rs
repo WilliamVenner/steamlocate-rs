@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 /// ```rust
 /// # use steamlocate::SteamDir;
 /// let mut steamdir = SteamDir::locate().unwrap();
-/// let gmod = steamdir.app(&4000);
+/// let gmod = steamdir.app(4000);
 /// println!("{:#?}", gmod.unwrap());
 /// ```
 /// ```ignore

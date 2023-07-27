@@ -63,7 +63,7 @@ extern crate steamlocate;
 use steamlocate::SteamDir;
 
 let mut steamdir = SteamDir::locate().unwrap();
-match steamdir.app(&4000) {
+match steamdir.app(4000) {
 	Some(app) => println!("{:#?}", app),
 	None => panic!("Couldn't locate Garry's Mod on this computer!")
 }
