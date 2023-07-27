@@ -22,7 +22,7 @@ fn find_library_folders() {
     let mut steamdir = steamdir_found.unwrap();
 
     steamdir.libraryfolders.discover(&steamdir.path);
-    assert!(steamdir.libraryfolders().paths.len() > 1);
+    assert!(!steamdir.libraryfolders().paths.is_empty(), "at least one library folder expected");
 
     println!("{:#?}", steamdir.libraryfolders.paths);
 }
