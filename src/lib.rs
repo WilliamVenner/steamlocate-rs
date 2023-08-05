@@ -129,6 +129,8 @@ use winreg::{
 // TODO: shouldn't be needed?
 #[cfg(not(target_os = "windows"))]
 extern crate dirs;
+#[cfg(target_os = "linux")]
+use std::env;
 
 // TODO: rework all of these re-exports
 // TODO: keep these errors in a separate module
@@ -273,6 +275,10 @@ impl SteamDir {
     fn locate_steam_dir() -> Option<PathBuf> {
         // Steam's installation location is pretty easy to find on Linux, too, thanks to the symlink in $USER
         let home_dir = dirs::home_dir()?;
+        let snap_dir = match env::var("SNAP_USER_DATA") {
+            Ok(snap_dir) => PathBuf::from(snap_dir),
+            Err(_) => home_dir.join("snap"),
+        };
 
         let steam_paths = vec![
             // Flatpak steam install directories
@@ -284,6 +290,10 @@ impl SteamDir {
             home_dir.join(".steam/steam"),
             home_dir.join(".steam/root"),
             home_dir.join(".steam"),
+            // Snap steam install directories
+            snap_dir.join("steam/common/.local/share/Steam"),
+            snap_dir.join("steam/common/.steam/steam"),
+            snap_dir.join("steam/common/.steam/root"),
         ];
 
         steam_paths.into_iter().find(|x| x.is_dir())
