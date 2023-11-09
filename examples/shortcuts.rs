@@ -5,8 +5,8 @@ fn main() {
     println!("Shortcuts:");
     for maybe_shortcut in steamdir.shortcuts().unwrap() {
         match maybe_shortcut {
-            Some(shortcut) => println!("    - {} {}", shortcut.appid, shortcut.app_name),
-            None => println!("Failed reading potential shortcut"),
+            Ok(shortcut) => println!("    - {} {}", shortcut.appid, shortcut.app_name),
+            Err(err) => println!("Failed reading potential shortcut: {err}"),
         }
     }
 }
