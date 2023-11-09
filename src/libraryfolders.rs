@@ -90,6 +90,12 @@ impl Iterator for LibraryIter {
     }
 }
 
+impl ExactSizeIterator for LibraryIter {
+    fn len(&self) -> usize {
+        self.paths.len()
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Library {
     path: PathBuf,

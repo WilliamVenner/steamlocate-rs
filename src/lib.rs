@@ -37,8 +37,8 @@
 //! use steamlocate::SteamDir;
 //!
 //! match SteamDir::locate() {
-//!     Some(steamdir) => println!("{:#?}", steamdir),
-//!     None => panic!("Couldn't locate Steam on this computer!")
+//!     Ok(steamdir) => println!("{:#?}", steamdir),
+//!     Err(_) => panic!("Couldn't locate Steam on this computer!")
 //! }
 //! ```
 //! ```ignore

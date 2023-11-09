@@ -12,7 +12,8 @@ fn main() {
 
     let steam_dir = SteamDir::locate().unwrap();
     match steam_dir.app(app_id) {
-        Some(app) => println!("Found app - {:#?}", app),
-        None => println!("No app found for {}", app_id),
+        Ok(Some(app)) => println!("Found app - {:#?}", app),
+        Ok(None) => println!("No app found for {}", app_id),
+        Err(err) => println!("Failed reading app: {err}"),
     }
 }
