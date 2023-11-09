@@ -27,4 +27,4 @@ winreg = "0.10"
 dirs = "3"
 
 [dev-dependencies]
-insta = { version = "1.28.0", features = ["redactions", "ron"] }
+insta = { version = "1.34.0", features = ["redactions", "ron"] }
