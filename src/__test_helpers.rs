@@ -194,7 +194,7 @@ struct LibraryFolder {
 
 impl LibraryFolder {
     fn mostly_default(path: PathBuf, contentid: i32, apps: BTreeMap<u32, u64>) -> Self {
-        let totalsize = apps.iter().map(|(_, size)| size).sum();
+        let totalsize = apps.values().sum();
         Self {
             path,
             contentid,
