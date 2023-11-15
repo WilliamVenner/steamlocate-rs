@@ -154,6 +154,12 @@ pub use libraryfolders::{parse_library_folders, Library};
 pub mod shortcut;
 pub use shortcut::Shortcut;
 
+/// NOT A PART OF THE PUBLIC API
+///
+/// These are just some helpers for setting up dummy test environments
+#[doc(hidden)]
+pub mod __test_helpers;
+
 /// An instance of a Steam installation.
 ///
 /// All functions of this struct will cache their results.
@@ -225,6 +231,18 @@ impl SteamDir {
     /// Returns a listing of all added non-Steam games
     pub fn shortcuts(&mut self) -> Result<shortcut::ShortcutIter> {
         shortcut::ShortcutIter::new(&self.path)
+    }
+
+    pub fn from_steam_dir(path: &Path) -> Result<SteamDir> {
+        if !path.is_dir() {
+            return Err(Error::FailedLocatingSteamDir);
+        }
+
+        // TODO(cosmic): should we do some kind of extra validation here? Could also use validation
+        // to determine if a steam dir has been uninstalled. Should fix all the flatpack/snap issues
+        Ok(Self {
+            path: path.to_owned(),
+        })
     }
 
     /// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (Windows)

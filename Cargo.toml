@@ -28,3 +28,4 @@ dirs = "5"
 
 [dev-dependencies]
 insta = { version = "1.34.0", features = ["redactions", "ron"] }
+tempfile = "3.8.1"
