@@ -1,41 +1,53 @@
-// Prerequisites:
-// * Steam must be installed
-// * At least two library folders must be setup
-// * At least two Steam apps must be installed
-// * An installed Steam game's app ID must be specified below
-static APP_ID: u32 = 4000;
+use std::convert::TryInto;
 
-use super::*;
+use crate::{
+    Error,
+    __test_helpers::{SampleApp, TempSteamDir, TestError, TestResult, TestTempDir},
+};
 
-#[test]
-fn find_steam() {
-    SteamDir::locate().unwrap();
+static GMOD_ID: u32 = SampleApp::GarrysMod.id();
+
+// The legacy test env assumed the following prerequisites:
+// - Steam must be installed
+// - At least two library folders must be setup (the steam dir acts as one)
+// - Garry's Mod along with at least one other steam app must be installed
+pub fn legacy_test_env() -> std::result::Result<TempSteamDir<TestTempDir>, TestError> {
+    TempSteamDir::builder()
+        .app(SampleApp::GarrysMod.into())
+        .library(SampleApp::GraveyardKeeper.try_into()?)
+        .finish()
 }
 
 #[test]
-fn find_library_folders() {
-    let steam_dir = SteamDir::locate().unwrap();
+fn find_library_folders() -> TestResult {
+    let tmp_steam_dir = legacy_test_env()?;
+    let steam_dir = tmp_steam_dir.steam_dir();
     assert!(steam_dir.libraries().unwrap().len() > 1);
+    Ok(())
 }
 
 #[test]
-fn find_app() {
-    let steam_dir = SteamDir::locate().unwrap();
-    let steam_app = steam_dir.app(APP_ID).unwrap();
-    assert_eq!(steam_app.unwrap().app_id, APP_ID);
+fn find_app() -> TestResult {
+    let tmp_steam_dir = legacy_test_env()?;
+    let steam_dir = tmp_steam_dir.steam_dir();
+    let steam_app = steam_dir.app(GMOD_ID).unwrap();
+    assert_eq!(steam_app.unwrap().app_id, GMOD_ID);
+    Ok(())
 }
 
 #[test]
-fn app_details() {
-    let steam_dir = SteamDir::locate().unwrap();
-    // TODO(cosmic): I don't like the double `.unwrap()` here. Represent missing as an error or no?
-    let steam_app = steam_dir.app(APP_ID).unwrap().unwrap();
+fn app_details() -> TestResult {
+    let tmp_steam_dir = legacy_test_env()?;
+    let steam_dir = tmp_steam_dir.steam_dir();
+    let steam_app = steam_dir.app(GMOD_ID)?.unwrap();
     assert_eq!(steam_app.name.unwrap(), "Garry's Mod");
+    Ok(())
 }
 
 #[test]
-fn all_apps() {
-    let steam_dir = SteamDir::locate().unwrap();
+fn all_apps() -> TestResult {
+    let tmp_steam_dir = legacy_test_env()?;
+    let steam_dir = tmp_steam_dir.steam_dir();
     let mut libraries = steam_dir.libraries().unwrap();
     let all_apps: Vec<_> = libraries
         .try_fold(Vec::new(), |mut acc, maybe_library| {
@@ -48,11 +60,13 @@ fn all_apps() {
         })
         .unwrap();
     assert!(all_apps.len() > 1);
+    Ok(())
 }
 
 #[test]
-fn all_apps_get_one() {
-    let steam_dir = SteamDir::locate().unwrap();
+fn all_apps_get_one() -> TestResult {
+    let tmp_steam_dir = legacy_test_env()?;
+    let steam_dir = tmp_steam_dir.steam_dir();
 
     let mut libraries = steam_dir.libraries().unwrap();
     let all_apps: Vec<_> = libraries
@@ -68,12 +82,14 @@ fn all_apps_get_one() {
     assert!(!all_apps.is_empty());
     assert!(all_apps.len() > 1);
 
-    let steam_app = steam_dir.app(APP_ID).unwrap().unwrap();
+    let steam_app = steam_dir.app(GMOD_ID).unwrap().unwrap();
     assert_eq!(
         all_apps
             .into_iter()
-            .find(|app| app.app_id == APP_ID)
+            .find(|app| app.app_id == GMOD_ID)
             .unwrap(),
         steam_app
     );
+
+    Ok(())
 }

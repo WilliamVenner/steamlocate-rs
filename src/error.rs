@@ -45,6 +45,7 @@ impl Error {
 #[derive(Copy, Clone, Debug)]
 #[non_exhaustive]
 pub enum ParseErrorKind {
+    // FIXME(cosmic): this is misspelled ;-;
     LibaryFolders,
     SteamApp,
     Shortcut,
