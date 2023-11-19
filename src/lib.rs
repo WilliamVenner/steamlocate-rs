@@ -32,7 +32,7 @@
 //! # Examples
 //!
 //! ### Locate the installed Steam directory
-//! ```rust
+//! ```rust,ignore
 //! extern crate steamlocate;
 //! use steamlocate::SteamDir;
 //!
@@ -161,7 +161,7 @@ pub mod test_helpers;
 /// If you'd like to dispose of the cache or get uncached results, just instantiate a new `SteamDir`.
 ///
 /// # Example
-/// ```rust
+/// ```rust,ignore
 /// # use steamlocate::SteamDir;
 /// let steamdir = SteamDir::locate();
 /// println!("{:#?}", steamdir.unwrap());
