@@ -1,8 +1,4 @@
-//! NOT PART OF THE PUBLIC API
-//!
 //! Some test helpers for setting up isolated dummy steam installations.
-//!
-//! Publicly accessible so that we can use them in unit, doc, and integration tests.
 
 // TODO: add a test with an env var flag that runs against your real local steam installation?
 
@@ -10,52 +6,31 @@ use std::{
     collections::BTreeMap,
     convert::{TryFrom, TryInto},
     fs, iter,
-    marker::PhantomData,
     path::{Path, PathBuf},
 };
 
 use crate::SteamDir;
 
 use serde::Serialize;
+use tempfile::TempDir;
 
-// A little bit of a headache. We want to use tempdirs for isolating the dummy steam installations,
-// but we can't specify a `cfg` that includes integration tests while also allowing for naming a
-// `dev-dependency` here. Instead we abstract the functionality behind a trait and every dependent
-// can provide their own concrete implementation. It makes for a bit of a mess unfortunately, but
-// it's either this or add a feature that's only used internally for testing which I don't like
-// even more.
-pub trait TempDir: Sized {
-    fn new() -> Result<Self, TestError>;
-    fn path(&self) -> PathBuf;
-}
-
-#[cfg(test)]
-pub struct TestTempDir(tempfile::TempDir);
-
-#[cfg(test)]
-impl TempDir for TestTempDir {
-    fn new() -> Result<Self, TestError> {
-        let mut builder = tempfile::Builder::new();
-        builder.prefix("steamlocate-test-");
-        let temp_dir = builder.tempdir()?;
-        Ok(Self(temp_dir))
-    }
-
-    fn path(&self) -> PathBuf {
-        self.0.path().to_owned()
-    }
+fn test_temp_dir() -> Result<TempDir, TestError> {
+    let temp_dir = tempfile::Builder::new()
+        .prefix("steamlocate-test-")
+        .tempdir()?;
+    Ok(temp_dir)
 }
 
 pub type TestError = Box<dyn std::error::Error>;
 pub type TestResult = Result<(), TestError>;
 
 // TODO(cosmic): Add in functionality for providing shortcuts too
-pub struct TempSteamDir<TmpDir> {
+pub struct TempSteamDir {
     steam_dir: crate::SteamDir,
-    _tmps: Vec<TmpDir>,
+    _tmps: Vec<TempDir>,
 }
 
-impl<TmpDir: TempDir> TryFrom<AppFile> for TempSteamDir<TmpDir> {
+impl TryFrom<AppFile> for TempSteamDir {
     type Error = TestError;
 
     fn try_from(app: AppFile) -> Result<Self, Self::Error> {
@@ -63,7 +38,7 @@ impl<TmpDir: TempDir> TryFrom<AppFile> for TempSteamDir<TmpDir> {
     }
 }
 
-impl<TmpDir: TempDir> TryFrom<SampleApp> for TempSteamDir<TmpDir> {
+impl TryFrom<SampleApp> for TempSteamDir {
     type Error = TestError;
 
     fn try_from(sample_app: SampleApp) -> Result<Self, Self::Error> {
@@ -71,9 +46,9 @@ impl<TmpDir: TempDir> TryFrom<SampleApp> for TempSteamDir<TmpDir> {
     }
 }
 
-impl<TmpDir> TempSteamDir<TmpDir> {
-    pub fn builder() -> TempSteamDirBuilder<TmpDir> {
-        TempSteamDirBuilder::new()
+impl TempSteamDir {
+    pub fn builder() -> TempSteamDirBuilder {
+        TempSteamDirBuilder::default()
     }
 
     pub fn steam_dir(&self) -> &SteamDir {
@@ -81,42 +56,27 @@ impl<TmpDir> TempSteamDir<TmpDir> {
     }
 }
 
+#[derive(Default)]
 #[must_use]
-pub struct TempSteamDirBuilder<TmpDir> {
-    libraries: Vec<TempLibrary<TmpDir>>,
+pub struct TempSteamDirBuilder {
+    libraries: Vec<TempLibrary>,
     apps: Vec<AppFile>,
 }
 
-impl<TmpDir> Default for TempSteamDirBuilder<TmpDir> {
-    fn default() -> Self {
-        Self {
-            libraries: Vec::default(),
-            apps: Vec::default(),
-        }
-    }
-}
-
-impl<TmpDir> TempSteamDirBuilder<TmpDir> {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
+impl TempSteamDirBuilder {
     pub fn app(mut self, app: AppFile) -> Self {
         self.apps.push(app);
         self
     }
 
-    pub fn library(mut self, library: TempLibrary<TmpDir>) -> Self {
+    pub fn library(mut self, library: TempLibrary) -> Self {
         self.libraries.push(library);
         self
     }
 
     // Steam dir is also a library, but is laid out slightly differently than a regular library
-    pub fn finish(self) -> Result<TempSteamDir<TmpDir>, TestError>
-    where
-        TmpDir: TempDir,
-    {
-        let tmp = TmpDir::new()?;
+    pub fn finish(self) -> Result<TempSteamDir, TestError> {
+        let tmp = test_temp_dir()?;
         let root_dir = tmp.path().join("test-steam-dir");
         let steam_dir = root_dir.join("Steam");
         let apps_dir = steam_dir.join("steamapps");
@@ -155,10 +115,10 @@ fn setup_steamapps_dir(apps_dir: &Path, apps: &[AppFile]) -> Result<(), TestErro
     Ok(())
 }
 
-fn setup_libraryfolders_file<TmpDir>(
+fn setup_libraryfolders_file(
     apps_dir: &Path,
     root_library: LibraryFolder,
-    aux_libraries: &[TempLibrary<TmpDir>],
+    aux_libraries: &[TempLibrary],
 ) -> Result<(), TestError> {
     let library_folders =
         iter::once(root_library).chain(aux_libraries.iter().map(|temp_library| {
@@ -207,14 +167,14 @@ impl LibraryFolder {
     }
 }
 
-pub struct TempLibrary<TmpDir> {
+pub struct TempLibrary {
     content_id: i32,
     path: PathBuf,
     apps: BTreeMap<u32, u64>,
-    _tmp: TmpDir,
+    _tmp: TempDir,
 }
 
-impl<TmpDir: TempDir> TryFrom<AppFile> for TempLibrary<TmpDir> {
+impl TryFrom<AppFile> for TempLibrary {
     type Error = TestError;
 
     fn try_from(app: AppFile) -> Result<Self, Self::Error> {
@@ -222,7 +182,7 @@ impl<TmpDir: TempDir> TryFrom<AppFile> for TempLibrary<TmpDir> {
     }
 }
 
-impl<TmpDir: TempDir> TryFrom<SampleApp> for TempLibrary<TmpDir> {
+impl TryFrom<SampleApp> for TempLibrary {
     type Error = TestError;
 
     fn try_from(sample_app: SampleApp) -> Result<Self, Self::Error> {
@@ -230,42 +190,26 @@ impl<TmpDir: TempDir> TryFrom<SampleApp> for TempLibrary<TmpDir> {
     }
 }
 
-impl<TmpDir> TempLibrary<TmpDir> {
-    pub fn builder() -> TempLibraryBuilder<TmpDir> {
-        TempLibraryBuilder::new()
+impl TempLibrary {
+    pub fn builder() -> TempLibraryBuilder {
+        TempLibraryBuilder::default()
     }
 }
 
+#[derive(Default)]
 #[must_use]
-pub struct TempLibraryBuilder<TmpDir> {
+pub struct TempLibraryBuilder {
     apps: Vec<AppFile>,
-    temp_dir_type: PhantomData<TmpDir>,
 }
 
-impl<TmpDir> Default for TempLibraryBuilder<TmpDir> {
-    fn default() -> Self {
-        Self {
-            apps: Vec::default(),
-            temp_dir_type: PhantomData,
-        }
-    }
-}
-
-impl<TmpDir> TempLibraryBuilder<TmpDir> {
-    fn new() -> Self {
-        Self::default()
-    }
-
+impl TempLibraryBuilder {
     fn app(mut self, app: AppFile) -> Self {
         self.apps.push(app);
         self
     }
 
-    fn finish(self) -> Result<TempLibrary<TmpDir>, TestError>
-    where
-        TmpDir: TempDir,
-    {
-        let tmp = TmpDir::new()?;
+    fn finish(self) -> Result<TempLibrary, TestError> {
+        let tmp = test_temp_dir()?;
         let root_dir = tmp.path().join("test-library");
         let apps_dir = root_dir.join("steamapps");
         fs::create_dir_all(&apps_dir)?;
@@ -343,7 +287,7 @@ impl SampleApp {
 
 #[test]
 fn sanity() -> TestResult {
-    let tmp_steam_dir = TempSteamDir::<TestTempDir>::try_from(SampleApp::GarrysMod)?;
+    let tmp_steam_dir = TempSteamDir::try_from(SampleApp::GarrysMod)?;
     let steam_dir = tmp_steam_dir.steam_dir();
     assert!(steam_dir.app(SampleApp::GarrysMod.id()).unwrap().is_some());
 

@@ -150,11 +150,9 @@ pub use libraryfolders::{parse_library_folders, Library};
 pub mod shortcut;
 pub use shortcut::Shortcut;
 
-/// NOT A PART OF THE PUBLIC API
-///
 /// These are just some helpers for setting up dummy test environments
-#[doc(hidden)]
-pub mod __test_helpers;
+#[cfg(any(test, doctest))]
+pub mod test_helpers;
 
 /// An instance of a Steam installation.
 ///
