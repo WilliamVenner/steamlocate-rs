@@ -28,6 +28,14 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
+  test:
+    needs: fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check formatting
+        run: cargo test
+
   docs:
     needs: fmt
     runs-on: ubuntu-latest
