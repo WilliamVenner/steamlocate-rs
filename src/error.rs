@@ -1,19 +1,29 @@
-use std::fmt;
+use std::{
+    fmt,
+    path::{Path, PathBuf},
+};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Error {
     FailedLocatingSteamDir,
-    // TODO: make more specific and associate with a path?
-    Io(std::io::Error),
-    // TODO: associate with a path
+    Io {
+        inner: std::io::Error,
+        path: PathBuf,
+    },
     Parse {
         kind: ParseErrorKind,
         error: ParseError,
+        path: PathBuf,
     },
     MissingExpectedApp {
         app_id: u32,
+    },
+    MissingAppInstall {
+        app_id: u32,
+        path: PathBuf,
     },
 }
 
@@ -21,15 +31,25 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::FailedLocatingSteamDir => f.write_str("Failed locating the steam dir"),
-            Self::Io(err) => write!(f, "Encountered an I/O error: {}", err),
-            Self::Parse { kind, error } => write!(
+            Self::Io { inner: err, path } => {
+                write!(f, "Encountered an I/O error: {} at {}", err, path.display())
+            }
+            Self::Parse { kind, error, path } => write!(
                 f,
-                "Failed parsing VDF file. File kind: {:?}, Error: {}",
-                kind, error
+                "Failed parsing VDF file. File kind: {:?}, Error: {} at {}",
+                kind,
+                error,
+                path.display(),
             ),
             Self::MissingExpectedApp { app_id } => {
                 write!(f, "Missing expected app with id: {}", app_id)
             }
+            Self::MissingAppInstall { app_id, path } => write!(
+                f,
+                "Missing expected app installation with id: {} at {}",
+                app_id,
+                path.display(),
+            ),
         }
     }
 }
@@ -37,16 +57,26 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 
 impl Error {
-    pub(crate) fn parse(kind: ParseErrorKind, error: ParseError) -> Self {
-        Self::Parse { kind, error }
+    pub(crate) fn io(io: std::io::Error, path: &Path) -> Self {
+        Self::Io {
+            inner: io,
+            path: path.to_owned(),
+        }
+    }
+
+    pub(crate) fn parse(kind: ParseErrorKind, error: ParseError, path: &Path) -> Self {
+        Self::Parse {
+            kind,
+            error,
+            path: path.to_owned(),
+        }
     }
 }
 
 #[derive(Copy, Clone, Debug)]
 #[non_exhaustive]
 pub enum ParseErrorKind {
-    // FIXME(cosmic): this is misspelled ;-;
-    LibaryFolders,
+    LibraryFolders,
     SteamApp,
     Shortcut,
 }
@@ -66,7 +96,7 @@ impl fmt::Display for ParseError {
 }
 
 #[derive(Debug)]
-pub enum ParseErrorInner {
+pub(crate) enum ParseErrorInner {
     Parse(keyvalues_parser::error::Error),
     Serde(keyvalues_serde::error::Error),
     UnexpectedStructure,
