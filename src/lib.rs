@@ -271,20 +271,17 @@ impl SteamDir {
         let install_path_str: String = installation_regkey.get_value("InstallPath").ok()?;
 
         let install_path = PathBuf::from(install_path_str);
-        install_path.is_dir().then(|| install_path)
+        install_path.is_dir().then_some(install_path)
     }
 
     #[cfg(target_os = "macos")]
     fn locate_steam_dir() -> Option<PathBuf> {
         // Steam's installation location is pretty easy to find on macOS, as it's always in $USER/Library/Application Support
-        let home_dir = match dirs::home_dir() {
-            Some(home_dir) => home_dir,
-            None => return None,
-        };
+        let home_dir = dirs::home_dir()?;
 
         // Find Library/Application Support/Steam
         let install_path = home_dir.join("Library/Application Support/Steam");
-        install_path.is_dir().then(|| install_path)
+        install_path.is_dir().then_some(install_path)
     }
 
     #[cfg(target_os = "linux")]
