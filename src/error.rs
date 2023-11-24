@@ -66,7 +66,7 @@ impl fmt::Display for ParseError {
 }
 
 #[derive(Debug)]
-pub enum ParseErrorInner {
+pub(crate) enum ParseErrorInner {
     Parse(keyvalues_parser::error::Error),
     Serde(keyvalues_serde::error::Error),
     UnexpectedStructure,
