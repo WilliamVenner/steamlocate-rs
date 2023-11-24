@@ -10,35 +10,28 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
+  validation:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        toolchain: [stable, beta]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
-      - name: Clippy
+      - name: Install ${{ matrix.toolchain }} toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: clippy, rustfmt
+      - name: Setup cache
+        uses: Swatinem/rust-cache@v2
+      - name: Commune with clippy
         run: cargo clippy --all -- -D warnings
-
-  fmt:
-    needs: check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
       - name: Check formatting
         run: cargo fmt --all -- --check
-
-  test:
-    needs: fmt
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Check formatting
+      - name: Run test suite
         run: cargo test
-
-  docs:
-    needs: fmt
-    runs-on: ubuntu-latest
-    env:
-      RUSTDOCFLAGS: -Dwarnings
-    steps:
-      - uses: actions/checkout@v3
       - name: Check docs
+        env:
+          RUSTDOCFLAGS: -Dwarnings
         run: cargo doc --all --no-deps
