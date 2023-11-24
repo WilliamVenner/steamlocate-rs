@@ -40,7 +40,7 @@ use keyvalues_parser::Vdf;
 /// }
 /// ```
 pub fn parse_library_folders(path: &Path) -> Result<LibraryIter> {
-    let parse_error = |err| Error::parse(ParseErrorKind::LibaryFolders, err);
+    let parse_error = |err| Error::parse(ParseErrorKind::LibraryFolders, err);
 
     if !path.is_file() {
         return Err(parse_error(ParseError::missing()));
@@ -65,7 +65,7 @@ pub fn parse_library_folders(path: &Path) -> Result<LibraryIter> {
                 .and_then(|value| value.get_str())
                 .ok_or_else(|| {
                     Error::parse(
-                        ParseErrorKind::LibaryFolders,
+                        ParseErrorKind::LibraryFolders,
                         ParseError::unexpected_structure(),
                     )
                 })
