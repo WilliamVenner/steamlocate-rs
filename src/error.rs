@@ -1,4 +1,7 @@
-use std::fmt;
+use std::{
+    fmt,
+    path::{Path, PathBuf},
+};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -6,8 +9,10 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[non_exhaustive]
 pub enum Error {
     FailedLocatingSteamDir,
-    // TODO: make more specific and associate with a path?
-    Io(std::io::Error),
+    Io {
+        inner: std::io::Error,
+        path: PathBuf,
+    },
     // TODO: associate with a path
     Parse {
         kind: ParseErrorKind,
@@ -22,7 +27,9 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::FailedLocatingSteamDir => f.write_str("Failed locating the steam dir"),
-            Self::Io(err) => write!(f, "Encountered an I/O error: {}", err),
+            Self::Io { inner: err, path } => {
+                write!(f, "Encountered an I/O error: {} at {}", err, path.display())
+            }
             Self::Parse { kind, error } => write!(
                 f,
                 "Failed parsing VDF file. File kind: {:?}, Error: {}",
@@ -38,6 +45,13 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 
 impl Error {
+    pub(crate) fn io(io: std::io::Error, path: &Path) -> Self {
+        Self::Io {
+            inner: io,
+            path: path.to_owned(),
+        }
+    }
+
     pub(crate) fn parse(kind: ParseErrorKind, error: ParseError) -> Self {
         Self::Parse { kind, error }
     }

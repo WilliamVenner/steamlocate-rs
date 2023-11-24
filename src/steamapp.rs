@@ -77,7 +77,7 @@ pub struct SteamApp {
 
 impl SteamApp {
     pub(crate) fn new(library_path: &Path, manifest: &Path) -> Result<Self> {
-        let contents = fs::read_to_string(manifest).map_err(Error::Io)?;
+        let contents = fs::read_to_string(manifest).map_err(|io| Error::io(io, manifest))?;
         let app = Self::from_manifest_str(library_path, &contents)?;
 
         // Check if the installation path exists and is a valid directory

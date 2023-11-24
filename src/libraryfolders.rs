@@ -46,7 +46,7 @@ pub fn parse_library_folders(path: &Path) -> Result<LibraryIter> {
         return Err(parse_error(ParseError::missing()));
     }
 
-    let contents = fs::read_to_string(path).map_err(Error::Io)?;
+    let contents = fs::read_to_string(path).map_err(|io| Error::io(io, path))?;
     let value = Vdf::parse(&contents)
         .map_err(|err| parse_error(ParseError::from_parser(err)))?
         .value;
@@ -107,8 +107,9 @@ impl Library {
         // Read the manifest files at the library to get an up-to-date list of apps since the
         // values in `libraryfolders.vdf` may be stale
         let mut apps = Vec::new();
-        for entry in fs::read_dir(path.join("steamapps")).map_err(Error::Io)? {
-            let entry = entry.map_err(Error::Io)?;
+        let steamapps = path.join("steamapps");
+        for entry in fs::read_dir(&steamapps).map_err(|io| Error::io(io, &steamapps))? {
+            let entry = entry.map_err(|io| Error::io(io, &steamapps))?;
             if let Some(id) = entry
                 .file_name()
                 .to_str()
