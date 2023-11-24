@@ -10,35 +10,17 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
+  validation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Clippy
+      - name: Commune with clippy
         run: cargo clippy --all -- -D warnings
-
-  fmt:
-    needs: check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
       - name: Check formatting
         run: cargo fmt --all -- --check
-
-  test:
-    needs: fmt
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Check formatting
+      - name: Run test suite
         run: cargo test
-
-  docs:
-    needs: fmt
-    runs-on: ubuntu-latest
-    env:
-      RUSTDOCFLAGS: -Dwarnings
-    steps:
-      - uses: actions/checkout@v3
       - name: Check docs
+        env:
+          RUSTDOCFLAGS: -Dwarnings
         run: cargo doc --all --no-deps
