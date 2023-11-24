@@ -21,6 +21,10 @@ pub enum Error {
     MissingExpectedApp {
         app_id: u32,
     },
+    MissingAppInstall {
+        app_id: u32,
+        path: PathBuf,
+    },
 }
 
 impl fmt::Display for Error {
@@ -40,6 +44,12 @@ impl fmt::Display for Error {
             Self::MissingExpectedApp { app_id } => {
                 write!(f, "Missing expected app with id: {}", app_id)
             }
+            Self::MissingAppInstall { app_id, path } => write!(
+                f,
+                "Missing expected app installation with id: {} at {}",
+                app_id,
+                path.display(),
+            ),
         }
     }
 }

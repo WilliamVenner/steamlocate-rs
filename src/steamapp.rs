@@ -88,11 +88,18 @@ impl SteamApp {
         let app = Self::from_internal_steam_app(internal, library_path);
 
         // Check if the installation path exists and is a valid directory
+        // TODO: this one check really shapes a lot of the API (in terms of how the data for the
+        // `SteamApp` is resolved. Maybe move this to something like
+        // ```rust
+        // library.resolve_install_dir(&app)?;
+        // ```
         if app.path.is_dir() {
             Ok(app)
         } else {
-            // TODO: app id here
-            Err(Error::MissingExpectedApp { app_id: 1 })
+            Err(Error::MissingAppInstall {
+                app_id: app.app_id,
+                path: app.path,
+            })
         }
     }
 
