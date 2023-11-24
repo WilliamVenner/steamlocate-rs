@@ -55,6 +55,7 @@ impl ShortcutIter {
             return Err(Error::parse(
                 ParseErrorKind::Shortcut,
                 ParseError::missing(),
+                &user_data,
             ));
         }
 
@@ -90,6 +91,7 @@ impl Iterator for ShortcutIter {
                                 break Err(Error::parse(
                                     ParseErrorKind::Shortcut,
                                     ParseError::unexpected_structure(),
+                                    &shortcuts_path,
                                 ));
                             }
                         }

@@ -13,10 +13,10 @@ pub enum Error {
         inner: std::io::Error,
         path: PathBuf,
     },
-    // TODO: associate with a path
     Parse {
         kind: ParseErrorKind,
         error: ParseError,
+        path: PathBuf,
     },
     MissingExpectedApp {
         app_id: u32,
@@ -30,10 +30,12 @@ impl fmt::Display for Error {
             Self::Io { inner: err, path } => {
                 write!(f, "Encountered an I/O error: {} at {}", err, path.display())
             }
-            Self::Parse { kind, error } => write!(
+            Self::Parse { kind, error, path } => write!(
                 f,
-                "Failed parsing VDF file. File kind: {:?}, Error: {}",
-                kind, error
+                "Failed parsing VDF file. File kind: {:?}, Error: {} at {}",
+                kind,
+                error,
+                path.display(),
             ),
             Self::MissingExpectedApp { app_id } => {
                 write!(f, "Missing expected app with id: {}", app_id)
@@ -52,8 +54,12 @@ impl Error {
         }
     }
 
-    pub(crate) fn parse(kind: ParseErrorKind, error: ParseError) -> Self {
-        Self::Parse { kind, error }
+    pub(crate) fn parse(kind: ParseErrorKind, error: ParseError, path: &Path) -> Self {
+        Self::Parse {
+            kind,
+            error,
+            path: path.to_owned(),
+        }
     }
 }
 
