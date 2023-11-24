@@ -1,6 +1,11 @@
 //! **WARN:** This is all hacky and should be replaced with proper binary VDF parsing
 
-use std::{fs, io, iter::Peekable, path::Path, slice::Iter};
+use std::{
+    fs, io,
+    iter::Peekable,
+    path::{Path, PathBuf},
+    slice::Iter,
+};
 
 use crate::{error::ParseErrorKind, Error, ParseError, Result};
 
@@ -38,6 +43,7 @@ impl Shortcut {
 }
 
 pub struct ShortcutIter {
+    dir: PathBuf,
     read_dir: fs::ReadDir,
     pending: std::vec::IntoIter<Shortcut>,
 }
@@ -49,11 +55,13 @@ impl ShortcutIter {
             return Err(Error::parse(
                 ParseErrorKind::Shortcut,
                 ParseError::missing(),
+                &user_data,
             ));
         }
 
-        let read_dir = fs::read_dir(user_data).map_err(Error::Io)?;
+        let read_dir = fs::read_dir(&user_data).map_err(|io| Error::io(io, &user_data))?;
         Ok(Self {
+            dir: user_data,
             read_dir,
             pending: Vec::new().into_iter(),
         })
@@ -83,6 +91,7 @@ impl Iterator for ShortcutIter {
                                 break Err(Error::parse(
                                     ParseErrorKind::Shortcut,
                                     ParseError::unexpected_structure(),
+                                    &shortcuts_path,
                                 ));
                             }
                         }
@@ -91,12 +100,12 @@ impl Iterator for ShortcutIter {
                             if err.kind() == io::ErrorKind::NotFound {
                                 continue;
                             } else {
-                                break Err(Error::Io(err));
+                                break Err(Error::io(err, &shortcuts_path));
                             }
                         }
                     }
                 }
-                Err(err) => break Err(Error::Io(err)),
+                Err(err) => break Err(Error::io(err, &self.dir)),
             }
         };
 

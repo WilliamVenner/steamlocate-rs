@@ -77,21 +77,33 @@ pub struct SteamApp {
 
 impl SteamApp {
     pub(crate) fn new(library_path: &Path, manifest: &Path) -> Result<Self> {
-        let contents = fs::read_to_string(manifest).map_err(Error::Io)?;
-        let app = Self::from_manifest_str(library_path, &contents)?;
+        let contents = fs::read_to_string(manifest).map_err(|io| Error::io(io, manifest))?;
+        let internal = keyvalues_serde::from_str(&contents).map_err(|err| {
+            Error::parse(
+                ParseErrorKind::SteamApp,
+                ParseError::from_serde(err),
+                manifest,
+            )
+        })?;
+        let app = Self::from_internal_steam_app(internal, library_path);
 
         // Check if the installation path exists and is a valid directory
-        // TODO: lint against printing
-        println!("{:?}", app.path);
+        // TODO: this one check really shapes a lot of the API (in terms of how the data for the
+        // `SteamApp` is resolved. Maybe move this to something like
+        // ```rust
+        // library.resolve_install_dir(&app)?;
+        // ```
         if app.path.is_dir() {
             Ok(app)
         } else {
-            // TODO: app id here
-            Err(Error::MissingExpectedApp { app_id: 1 })
+            Err(Error::MissingAppInstall {
+                app_id: app.app_id,
+                path: app.path,
+            })
         }
     }
 
-    pub(crate) fn from_manifest_str(library_path: &Path, manifest: &str) -> Result<Self> {
+    pub(crate) fn from_internal_steam_app(internal: InternalSteamApp, library_path: &Path) -> Self {
         let InternalSteamApp {
             app_id,
             universe,
@@ -121,10 +133,7 @@ impl SteamApp {
             mounted_config,
             install_scripts,
             shared_depots,
-        } = keyvalues_serde::from_str(manifest).map_err(|err| Error::Parse {
-            kind: ParseErrorKind::SteamApp,
-            error: ParseError::from_serde(err),
-        })?;
+        } = internal;
 
         let path = library_path
             .join("steamapps")
@@ -148,7 +157,7 @@ impl SteamApp {
         let full_validate_before_next_update = full_validate_before_next_update.unwrap_or_default();
         let full_validate_after_next_update = full_validate_after_next_update.unwrap_or_default();
 
-        Ok(Self {
+        Self {
             app_id,
             universe,
             launcher_path,
@@ -177,7 +186,7 @@ impl SteamApp {
             mounted_config,
             install_scripts,
             shared_depots,
-        })
+        }
     }
 }
 
@@ -348,7 +357,7 @@ pub struct Depot {
 }
 
 #[derive(Debug, Deserialize)]
-struct InternalSteamApp {
+pub(crate) struct InternalSteamApp {
     #[serde(rename = "appid")]
     app_id: u32,
     #[serde(rename = "installdir")]
@@ -410,10 +419,15 @@ struct InternalSteamApp {
 mod tests {
     use super::*;
 
+    fn app_from_manifest_str(s: &str, library_path: &Path) -> SteamApp {
+        let internal: InternalSteamApp = keyvalues_serde::from_str(s).unwrap();
+        SteamApp::from_internal_steam_app(internal, library_path)
+    }
+
     #[test]
     fn sanity() {
         let manifest = include_str!("../tests/assets/appmanifest_230410.acf");
-        let app = SteamApp::from_manifest_str(Path::new("C:\\redact\\me"), manifest).unwrap();
+        let app = app_from_manifest_str(manifest, Path::new("C:\\redact\\me"));
         // Redact the path because the path separator used is not cross-platform
         insta::assert_ron_snapshot!(app, { ".path" => "[path]" });
     }
@@ -421,7 +435,7 @@ mod tests {
     #[test]
     fn more_sanity() {
         let manifest = include_str!("../tests/assets/appmanifest_599140.acf");
-        let app = SteamApp::from_manifest_str(Path::new("/redact/me"), manifest).unwrap();
+        let app = app_from_manifest_str(manifest, Path::new("/redact/me"));
         insta::assert_ron_snapshot!(app, { ".path" => "[path]" });
     }
 }
