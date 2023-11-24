@@ -58,10 +58,10 @@ pub fn parse_library_folders(path: &Path) -> Result<LibraryIter> {
         .filter(|(key, _)| key.parse::<u32>().is_ok())
         .map(|(_, values)| {
             values
-                .get(0)
+                .first()
                 .and_then(|value| value.get_obj())
                 .and_then(|obj| obj.get("path"))
-                .and_then(|values| values.get(0))
+                .and_then(|values| values.first())
                 .and_then(|value| value.get_str())
                 .ok_or_else(|| {
                     Error::parse(
