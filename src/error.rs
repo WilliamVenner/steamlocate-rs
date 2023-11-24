@@ -8,6 +8,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum Error {
+    // TODO: people would probably appreciate more context here even if it has to be opaque
     FailedLocatingSteamDir,
     Io {
         inner: std::io::Error,

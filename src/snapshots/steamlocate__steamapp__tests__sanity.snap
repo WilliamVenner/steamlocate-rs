@@ -8,9 +8,7 @@ SteamApp(
   name: Some("Warframe"),
   universe: Some(Public),
   launcher_path: Some("C:\\Program Files (x86)\\Steam\\steam.exe"),
-  state_flags: Some([
-    FullyInstalled,
-  ]),
+  state_flags: Some(StateFlags(4)),
   last_updated: Some(SystemTime(
     secs_since_epoch: 1630871495,
     nanos_since_epoch: 0,
