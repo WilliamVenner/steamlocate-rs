@@ -88,8 +88,6 @@ impl SteamApp {
         let app = Self::from_internal_steam_app(internal, library_path);
 
         // Check if the installation path exists and is a valid directory
-        // TODO: lint against printing
-        println!("{:?}", app.path);
         if app.path.is_dir() {
             Ok(app)
         } else {
