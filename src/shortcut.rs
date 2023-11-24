@@ -111,27 +111,25 @@ impl Iterator for ShortcutIter {
 #[must_use]
 fn after_many_case_insensitive(it: &mut Peekable<Iter<u8>>, needle: &[u8]) -> bool {
     loop {
-        loop {
-            let mut needle_it = needle.iter();
-            let b = match it.next() {
-                Some(b) => b,
-                None => return false,
-            };
+        let mut needle_it = needle.iter();
+        let b = match it.next() {
+            Some(b) => b,
+            None => return false,
+        };
 
-            let maybe_needle_b = needle_it.next();
-            if maybe_u8_eq_ignore_ascii_case(maybe_needle_b, Some(b)) {
-                loop {
-                    if needle_it.len() == 0 {
-                        return true;
-                    }
+        let maybe_needle_b = needle_it.next();
+        if maybe_u8_eq_ignore_ascii_case(maybe_needle_b, Some(b)) {
+            loop {
+                if needle_it.len() == 0 {
+                    return true;
+                }
 
-                    let maybe_b = it.peek();
-                    let maybe_needle_b = needle_it.next();
-                    if maybe_u8_eq_ignore_ascii_case(maybe_needle_b, maybe_b.copied()) {
-                        let _ = it.next();
-                    } else {
-                        break;
-                    }
+                let maybe_b = it.peek();
+                let maybe_needle_b = needle_it.next();
+                if maybe_u8_eq_ignore_ascii_case(maybe_needle_b, maybe_b.copied()) {
+                    let _ = it.next();
+                } else {
+                    break;
                 }
             }
         }
