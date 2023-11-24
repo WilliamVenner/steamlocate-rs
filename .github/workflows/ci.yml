@@ -14,13 +14,14 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        toolchain: [stable, beta]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
-      - name: Install toolchain
+      - name: Install ${{ matrix.toolchain }} toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.toolchain }}
           components: clippy, rustfmt
       - name: Setup cache
         uses: Swatinem/rust-cache@v2
