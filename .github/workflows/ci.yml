@@ -22,6 +22,8 @@ jobs:
         with:
           toolchain: stable
           components: clippy, rustfmt
+      - name: Setup cache
+        uses: Swatinem/rust-cache@v2
       - name: Commune with clippy
         run: cargo clippy --all -- -D warnings
       - name: Check formatting
