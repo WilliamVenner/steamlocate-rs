@@ -2,23 +2,54 @@ use std::{
     collections::BTreeMap,
     fs,
     path::{Path, PathBuf},
-    time,
+    slice, time,
 };
 
-use crate::{error::ParseErrorKind, Error, ParseError, Result};
+use crate::{
+    error::{ParseError, ParseErrorKind},
+    Error, Library, Result,
+};
 
 use serde::Deserialize;
+
+pub struct Iter<'library> {
+    library: &'library Library,
+    app_ids: slice::Iter<'library, u32>,
+}
+
+impl<'library> Iter<'library> {
+    pub(crate) fn new(library: &'library Library) -> Self {
+        Self {
+            library,
+            app_ids: library.app_ids().iter(),
+        }
+    }
+}
+
+impl<'library> Iterator for Iter<'library> {
+    type Item = Result<App>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let app_id = *self.app_ids.next()?;
+        if let some_res @ Some(_) = self.library.app(app_id) {
+            some_res
+        } else {
+            // We use the listing from libraryfolders, so all apps should be accounted for
+            Some(Err(Error::MissingExpectedApp { app_id }))
+        }
+    }
+}
 
 /// An instance of an installed Steam app.
 /// # Example
 /// ```ignore
-/// # use steamlocate::SteamDir;
-/// let mut steamdir = SteamDir::locate().unwrap();
+/// # use steamlocate::InstallDir;
+/// let mut steamdir = InstallDir::locate().unwrap();
 /// let gmod = steamdir.app(&4000);
 /// println!("{:#?}", gmod.unwrap());
 /// ```
 /// ```ignore
-/// SteamApp (
+/// App (
 ///     appid: u32: 4000,
 ///     path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
 ///     vdf: <steamy_vdf::Table>,
@@ -29,7 +60,7 @@ use serde::Deserialize;
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(test, derive(serde::Serialize))]
 #[non_exhaustive]
-pub struct SteamApp {
+pub struct App {
     /// The app ID of this Steam app.
     pub app_id: u32,
 
@@ -43,7 +74,7 @@ pub struct SteamApp {
 
     pub universe: Option<Universe>,
     pub launcher_path: Option<PathBuf>,
-    pub state_flags: Option<Vec<StateFlag>>,
+    pub state_flags: Option<StateFlags>,
     pub last_updated: Option<time::SystemTime>,
     // Can't find anything on what these values mean. I've seen 0, 2, 4, 6, and 7
     pub update_result: Option<u64>,
@@ -75,21 +106,17 @@ pub struct SteamApp {
     pub last_user: Option<u64>,
 }
 
-impl SteamApp {
+impl App {
     pub(crate) fn new(library_path: &Path, manifest: &Path) -> Result<Self> {
         let contents = fs::read_to_string(manifest).map_err(|io| Error::io(io, manifest))?;
         let internal = keyvalues_serde::from_str(&contents).map_err(|err| {
-            Error::parse(
-                ParseErrorKind::SteamApp,
-                ParseError::from_serde(err),
-                manifest,
-            )
+            Error::parse(ParseErrorKind::App, ParseError::from_serde(err), manifest)
         })?;
         let app = Self::from_internal_steam_app(internal, library_path);
 
         // Check if the installation path exists and is a valid directory
         // TODO: this one check really shapes a lot of the API (in terms of how the data for the
-        // `SteamApp` is resolved. Maybe move this to something like
+        // `App` is resolved. Maybe move this to something like
         // ```rust
         // library.resolve_install_dir(&app)?;
         // ```
@@ -103,8 +130,8 @@ impl SteamApp {
         }
     }
 
-    pub(crate) fn from_internal_steam_app(internal: InternalSteamApp, library_path: &Path) -> Self {
-        let InternalSteamApp {
+    pub(crate) fn from_internal_steam_app(internal: InternalApp, library_path: &Path) -> Self {
+        let InternalApp {
             app_id,
             universe,
             launcher_path,
@@ -141,7 +168,7 @@ impl SteamApp {
             .join(install_dir);
 
         let universe = universe.map(Universe::from);
-        let state_flags = state_flags.map(StateFlag::flags_from_packed);
+        let state_flags = state_flags.map(StateFlags);
         let last_updated = last_updated.and_then(time_as_secs_from_unix_epoch);
         let scheduled_auto_update = if scheduled_auto_update == Some(0) {
             None
@@ -216,6 +243,96 @@ impl From<u64> for Universe {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(test, derive(serde::Serialize))]
+pub struct StateFlags(pub u64);
+
+impl StateFlags {
+    pub fn flags(self) -> FlagIter {
+        self.into()
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct FlagIter(Option<FlagIterInner>);
+
+impl FlagIter {
+    fn from_valid(valid: ValidIter) -> Self {
+        Self(Some(FlagIterInner::Valid(valid)))
+    }
+}
+
+impl From<StateFlags> for FlagIter {
+    fn from(state: StateFlags) -> Self {
+        Self(Some(state.into()))
+    }
+}
+
+impl Iterator for FlagIter {
+    type Item = StateFlag;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // Tiny little state machine:
+        // - None indicates the iterator is done (trap state)
+        // - Invalid will emit invalid once and finish
+        // - Valid will pull on the inner iterator till it's finished
+        let current = std::mem::take(self);
+        let (next, ret) = match current.0? {
+            FlagIterInner::Invalid => (Self::default(), StateFlag::Invalid),
+            FlagIterInner::Valid(mut valid) => {
+                let ret = valid.next()?;
+                (Self::from_valid(valid), ret)
+            }
+        };
+        *self = next;
+        Some(ret)
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+enum FlagIterInner {
+    #[default]
+    Invalid,
+    Valid(ValidIter),
+}
+
+impl From<StateFlags> for FlagIterInner {
+    fn from(state: StateFlags) -> Self {
+        if state.0 == 0 {
+            Self::Invalid
+        } else {
+            Self::Valid(state.into())
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+struct ValidIter {
+    state: StateFlags,
+    offset: u8,
+}
+
+impl From<StateFlags> for ValidIter {
+    fn from(state: StateFlags) -> Self {
+        Self { state, offset: 0 }
+    }
+}
+
+impl Iterator for ValidIter {
+    type Item = StateFlag;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // Rotate over each bit and emit each one that is set
+        loop {
+            let flag = 1u64.checked_shl(self.offset.into())?;
+            self.offset = self.offset.checked_add(1)?;
+            if self.state.0 & flag != 0 {
+                break Some(StateFlag::from_bit_offset(self.offset - 1));
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(test, derive(serde::Serialize))]
 pub enum StateFlag {
@@ -241,50 +358,35 @@ pub enum StateFlag {
     Staging,
     Committing,
     UpdateStopping,
-    // TODO: should this just store the bit offset?
-    Unknown(u64),
+    Unknown(u8),
 }
 
 // More info: https://github.com/lutris/lutris/blob/master/docs/steam.rst
 impl StateFlag {
-    fn flags_from_packed(bit_flags: u64) -> Vec<StateFlag> {
-        const FLAG_TO_MASK: &[(StateFlag, u64)] = &[
-            (StateFlag::Uninstalled, 1),
-            (StateFlag::UpdateRequired, 2),
-            (StateFlag::FullyInstalled, 4),
-            (StateFlag::Encrypted, 8),
-            (StateFlag::Locked, 16),
-            (StateFlag::FilesMissing, 32),
-            (StateFlag::AppRunning, 64),
-            (StateFlag::FilesCorrupt, 128),
-            (StateFlag::UpdateRunning, 256),
-            (StateFlag::UpdatePaused, 512),
-            (StateFlag::UpdateStarted, 1024),
-            (StateFlag::Uninstalling, 2048),
-            (StateFlag::BackupRunning, 4096),
-            (StateFlag::Reconfiguring, 65536),
-            (StateFlag::Validating, 131072),
-            (StateFlag::AddingFiles, 262144),
-            (StateFlag::Preallocating, 524288),
-            (StateFlag::Downloading, 1048576),
-            (StateFlag::Staging, 2097152),
-            (StateFlag::Committing, 4194304),
-            (StateFlag::UpdateStopping, 8388608),
-        ];
-        if bit_flags == 0 {
-            vec![StateFlag::Invalid]
-        } else {
-            FLAG_TO_MASK
-                .iter()
-                .filter_map(|&(flag, mask)| {
-                    if bit_flags & mask > 0 {
-                        Some(flag)
-                    } else {
-                        // TODO: this should be `Unknown`
-                        None
-                    }
-                })
-                .collect()
+    fn from_bit_offset(offset: u8) -> Self {
+        match offset {
+            0 => Self::Uninstalled,
+            1 => Self::UpdateRequired,
+            2 => Self::FullyInstalled,
+            3 => Self::Encrypted,
+            4 => Self::Locked,
+            5 => Self::FilesMissing,
+            6 => Self::AppRunning,
+            7 => Self::FilesCorrupt,
+            8 => Self::UpdateRunning,
+            9 => Self::UpdatePaused,
+            10 => Self::UpdateStarted,
+            11 => Self::Uninstalling,
+            12 => Self::BackupRunning,
+            16 => Self::Reconfiguring,
+            17 => Self::Validating,
+            18 => Self::AddingFiles,
+            19 => Self::Preallocating,
+            20 => Self::Downloading,
+            21 => Self::Staging,
+            22 => Self::Committing,
+            23 => Self::UpdateStopping,
+            unknown @ (13..=15 | 24..) => Self::Unknown(unknown),
         }
     }
 }
@@ -357,7 +459,7 @@ pub struct Depot {
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) struct InternalSteamApp {
+pub(crate) struct InternalApp {
     #[serde(rename = "appid")]
     app_id: u32,
     #[serde(rename = "installdir")]
@@ -419,9 +521,9 @@ pub(crate) struct InternalSteamApp {
 mod tests {
     use super::*;
 
-    fn app_from_manifest_str(s: &str, library_path: &Path) -> SteamApp {
-        let internal: InternalSteamApp = keyvalues_serde::from_str(s).unwrap();
-        SteamApp::from_internal_steam_app(internal, library_path)
+    fn app_from_manifest_str(s: &str, library_path: &Path) -> App {
+        let internal: InternalApp = keyvalues_serde::from_str(s).unwrap();
+        App::from_internal_steam_app(internal, library_path)
     }
 
     #[test]
@@ -437,5 +539,21 @@ mod tests {
         let manifest = include_str!("../tests/assets/appmanifest_599140.acf");
         let app = app_from_manifest_str(manifest, Path::new("/redact/me"));
         insta::assert_ron_snapshot!(app, { ".path" => "[path]" });
+    }
+
+    #[test]
+    fn state_flags() {
+        let mut it = StateFlags(0).flags();
+        assert_eq!(it.next(), Some(StateFlag::Invalid));
+        assert_eq!(it.next(), None);
+
+        let mut it = StateFlags(4).flags();
+        assert_eq!(it.next(), Some(StateFlag::FullyInstalled));
+        assert_eq!(it.next(), None);
+
+        let mut it = StateFlags(6).flags();
+        assert_eq!(it.next(), Some(StateFlag::UpdateRequired));
+        assert_eq!(it.next(), Some(StateFlag::FullyInstalled));
+        assert_eq!(it.next(), None);
     }
 }

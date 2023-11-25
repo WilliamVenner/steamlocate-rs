@@ -1,17 +1,14 @@
 ---
-source: src/steamapp.rs
+source: src/app.rs
 expression: app
 ---
-SteamApp(
+App(
   app_id: 599140,
   path: "[path]",
   name: Some("Graveyard Keeper"),
   universe: Some(Public),
   launcher_path: None,
-  state_flags: Some([
-    UpdateRequired,
-    FullyInstalled,
-  ]),
+  state_flags: Some(StateFlags(6)),
   last_updated: Some(SystemTime(
     secs_since_epoch: 1672176869,
     nanos_since_epoch: 0,
