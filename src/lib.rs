@@ -22,10 +22,10 @@
 //! # Caching
 //! All functions in this crate cache their results, meaning you can call them as many times as you like and they will always return the same reference.
 //!
-//! If you need to get uncached results, simply instantiate a new [SteamDir](https://docs.rs/steamlocate/*/steamlocate/struct.SteamDir.html).
+//! If you need to get uncached results, simply instantiate a new [InstallDir](https://docs.rs/steamlocate/*/steamlocate/struct.InstallDir.html).
 //!
 //! # steamid-ng Support
-//! This crate supports [steamid-ng](https://docs.rs/steamid-ng) and can automatically convert [SteamApp::last_user](struct.SteamApp.html#structfield.last_user) to a [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) for you.
+//! This crate supports [steamid-ng](https://docs.rs/steamid-ng) and can automatically convert [App::last_user](struct.App.html#structfield.last_user) to a [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) for you.
 //!
 //! To enable this support, [use the  `steamid_ng` Cargo.toml feature](#using-steamlocate).
 //!
@@ -34,15 +34,15 @@
 //! ### Locate the installed Steam directory
 //! ```rust,ignore
 //! extern crate steamlocate;
-//! use steamlocate::SteamDir;
+//! use steamlocate::InstallDir;
 //!
-//! match SteamDir::locate() {
+//! match InstallDir::locate() {
 //!     Ok(steamdir) => println!("{:#?}", steamdir),
 //!     Err(_) => panic!("Couldn't locate Steam on this computer!")
 //! }
 //! ```
 //! ```ignore
-//! SteamDir (
+//! InstallDir (
 //!     path: PathBuf: "C:\\Program Files (x86)\\Steam"
 //! )
 //! ```
@@ -51,16 +51,16 @@
 //! This will locate Garry's Mod anywhere on the filesystem.
 //! ```ignore
 //! extern crate steamlocate;
-//! use steamlocate::SteamDir;
+//! use steamlocate::InstallDir;
 //!
-//! let mut steamdir = SteamDir::locate().unwrap();
+//! let mut steamdir = InstallDir::locate().unwrap();
 //! match steamdir.app(&4000) {
 //!     Some(app) => println!("{:#?}", app),
 //!     None => panic!("Couldn't locate Garry's Mod on this computer!")
 //! }
 //! ```
 //! ```ignore
-//! SteamApp (
+//! App (
 //!     appid: u32: 4000,
 //!     path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
 //!     vdf: <steamy_vdf::Table>,
@@ -72,17 +72,17 @@
 //! ### Locate all Steam apps on this filesystem
 //! ```ignore
 //! extern crate steamlocate;
-//! use steamlocate::{SteamDir, SteamApp};
+//! use steamlocate::{InstallDir, App};
 //! use std::collections::HashMap;
 //!
-//! let mut steamdir = SteamDir::locate().unwrap();
-//! let apps: &HashMap<u32, Option<SteamApp>> = steamdir.apps();
+//! let mut steamdir = InstallDir::locate().unwrap();
+//! let apps: &HashMap<u32, Option<App>> = steamdir.apps();
 //!
 //! println!("{:#?}", apps);
 //! ```
 //! ```ignore
 //! {
-//!     4000: SteamApp (
+//!     4000: App (
 //!         appid: u32: 4000,
 //!         path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
 //!         vdf: <steamy_vdf::Table>,
@@ -96,10 +96,10 @@
 //! ### Locate all Steam library folders
 //! ```ignore
 //! extern crate steamlocate;
-//! use steamlocate::{SteamDir, LibraryFolders};
+//! use steamlocate::{InstallDir, LibraryFolders};
 //! use std::{vec, path::PathBuf};
 //!
-//! let mut steamdir: SteamDir = SteamDir::locate().unwrap();
+//! let mut steamdir: InstallDir = InstallDir::locate().unwrap();
 //! let libraryfolders: &LibraryFolders = steamdir.libraryfolders();
 //! let paths: &Vec<PathBuf> = &libraryfolders.paths;
 //!
@@ -123,69 +123,43 @@
 #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 compile_error!("Unsupported operating system!");
 
+pub mod app;
+pub mod error;
+pub mod library;
+pub mod shortcut;
+#[cfg(any(test, doctest))]
+pub mod tests;
+
 use std::path::{Path, PathBuf};
 
-use libraryfolders::LibraryIter;
-#[cfg(target_os = "windows")]
-use winreg::{
-    enums::{HKEY_LOCAL_MACHINE, KEY_READ},
-    RegKey,
-};
-// TODO: shouldn't be needed?
-#[cfg(not(target_os = "windows"))]
-extern crate dirs;
-#[cfg(target_os = "linux")]
-use std::env;
-
-// TODO: rework all of these re-exports
-// TODO: keep these errors in a separate module
-pub mod error;
-pub use error::{Error, ParseError, Result};
-
-#[cfg(test)]
-mod tests;
-
-pub mod steamapp;
-pub use steamapp::SteamApp;
-
-#[doc(hidden)]
-pub mod steamcompat;
-pub use steamcompat::SteamCompat;
-
-#[doc(hidden)]
-pub mod libraryfolders;
-pub use libraryfolders::{parse_library_folders, Library};
-
-pub mod shortcut;
-pub use shortcut::Shortcut;
-
-/// These are just some helpers for setting up dummy test environments
-#[cfg(any(test, doctest))]
-pub mod test_helpers;
+pub use crate::app::App;
+pub use crate::error::{Error, Result};
+pub use crate::library::Library;
+pub use crate::shortcut::Shortcut;
 
 /// An instance of a Steam installation.
 ///
 /// All functions of this struct will cache their results.
 ///
-/// If you'd like to dispose of the cache or get uncached results, just instantiate a new `SteamDir`.
+/// If you'd like to dispose of the cache or get uncached results, just instantiate a new `InstallDir`.
 ///
 /// # Example
 /// ```rust,ignore
-/// # use steamlocate::SteamDir;
-/// let steamdir = SteamDir::locate();
+/// # use steamlocate::InstallDir;
+/// let steamdir = InstallDir::locate();
 /// println!("{:#?}", steamdir.unwrap());
 /// ```
 /// ```ignore
-/// SteamDir (
+/// InstallDir (
 ///     path: "C:\\Program Files (x86)\\Steam"
 /// )
 /// ```
 #[derive(Clone, Debug)]
-pub struct SteamDir {
+pub struct InstallDir {
     path: PathBuf,
 }
 
-impl SteamDir {
+impl InstallDir {
     /// The path to the Steam installation directory on this computer.
     ///
     /// Example: `C:\Program Files (x86)\Steam`
@@ -193,26 +167,26 @@ impl SteamDir {
         &self.path
     }
 
-    pub fn libraries(&self) -> Result<LibraryIter> {
+    pub fn libraries(&self) -> Result<library::Iter> {
         let libraryfolders_vdf = self.path.join("steamapps").join("libraryfolders.vdf");
-        parse_library_folders(&libraryfolders_vdf)
+        library::parse_library_folders(&libraryfolders_vdf)
     }
 
-    /// Returns a `Some` reference to a `SteamApp` via its app ID.
+    /// Returns a `Some` reference to a `App` via its app ID.
     ///
     /// If the Steam app is not installed on the system, this will return `None`.
     ///
-    /// This function will cache its (either `Some` and `None`) result and will always return a reference to the same `SteamApp`.
+    /// This function will cache its (either `Some` and `None`) result and will always return a reference to the same `App`.
     ///
     /// # Example
     /// ```ignore
-    /// # use steamlocate::SteamDir;
-    /// let mut steamdir = SteamDir::locate().unwrap();
+    /// # use steamlocate::InstallDir;
+    /// let mut steamdir = InstallDir::locate().unwrap();
     /// let gmod = steamdir.app(&4000);
     /// println!("{:#?}", gmod.unwrap());
     /// ```
     /// ```ignore
-    /// SteamApp (
+    /// App (
     ///     appid: u32: 4000,
     ///     path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
     ///     vdf: <steamy_vdf::Table>,
@@ -220,7 +194,7 @@ impl SteamDir {
     ///     last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
     /// )
     /// ```
-    pub fn app(&self, app_id: u32) -> Result<Option<SteamApp>> {
+    pub fn app(&self, app_id: u32) -> Result<Option<App>> {
         // Search for the `app_id` in each library
         match self.libraries() {
             Err(e) => Err(e),
@@ -232,13 +206,13 @@ impl SteamDir {
     }
 
     /// Returns a listing of all added non-Steam games
-    pub fn shortcuts(&mut self) -> Result<shortcut::ShortcutIter> {
-        shortcut::ShortcutIter::new(&self.path)
+    pub fn shortcuts(&mut self) -> Result<shortcut::Iter> {
+        shortcut::Iter::new(&self.path)
     }
 
-    pub fn from_steam_dir(path: &Path) -> Result<SteamDir> {
+    pub fn from_steam_dir(path: &Path) -> Result<InstallDir> {
         if !path.is_dir() {
-            return Err(Error::FailedLocatingSteamDir);
+            return Err(Error::FailedLocatingInstallDir);
         }
 
         // TODO(cosmic): should we do some kind of extra validation here? Could also use validation
@@ -248,17 +222,22 @@ impl SteamDir {
         })
     }
 
-    /// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (Windows)
+    /// Locates the Steam installation directory on the filesystem and initializes a `InstallDir` (Windows)
     ///
     /// Returns `None` if no Steam installation can be located.
-    pub fn locate() -> Result<SteamDir> {
-        let path = Self::locate_steam_dir().ok_or(Error::FailedLocatingSteamDir)?;
+    pub fn locate() -> Result<InstallDir> {
+        let path = Self::locate_steam_dir().ok_or(Error::FailedLocatingInstallDir)?;
 
         Ok(Self { path })
     }
 
     #[cfg(target_os = "windows")]
     fn locate_steam_dir() -> Option<PathBuf> {
+        use winreg::{
+            enums::{HKEY_LOCAL_MACHINE, KEY_READ},
+            RegKey,
+        };
+
         // Locating the Steam installation location is a bit more complicated on Windows
 
         // Steam's installation location can be found in the registry
@@ -291,6 +270,8 @@ impl SteamDir {
 
     #[cfg(target_os = "linux")]
     fn locate_steam_dir() -> Option<PathBuf> {
+        use std::env;
+
         // Steam's installation location is pretty easy to find on Linux, too, thanks to the symlink in $USER
         let home_dir = dirs::home_dir()?;
         let snap_dir = match env::var("SNAP_USER_DATA") {

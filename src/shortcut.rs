@@ -4,10 +4,13 @@ use std::{
     fs, io,
     iter::Peekable,
     path::{Path, PathBuf},
-    slice::Iter,
+    slice,
 };
 
-use crate::{error::ParseErrorKind, Error, ParseError, Result};
+use crate::{
+    error::{ParseError, ParseErrorKind},
+    Error, Result,
+};
 
 /// A added non-Steam game
 ///
@@ -42,13 +45,13 @@ impl Shortcut {
     }
 }
 
-pub struct ShortcutIter {
+pub struct Iter {
     dir: PathBuf,
     read_dir: fs::ReadDir,
     pending: std::vec::IntoIter<Shortcut>,
 }
 
-impl ShortcutIter {
+impl Iter {
     pub(crate) fn new(steam_dir: &Path) -> Result<Self> {
         let user_data = steam_dir.join("userdata");
         if !user_data.is_dir() {
@@ -68,7 +71,7 @@ impl ShortcutIter {
     }
 }
 
-impl Iterator for ShortcutIter {
+impl Iterator for Iter {
     type Item = Result<Shortcut>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -118,7 +121,7 @@ impl Iterator for ShortcutIter {
 /// Only works if the starting byte is not used anywhere else in the needle. This works well when
 /// finding keys since the starting byte indicates the type and wouldn't be used in the key
 #[must_use]
-fn after_many_case_insensitive(it: &mut Peekable<Iter<u8>>, needle: &[u8]) -> bool {
+fn after_many_case_insensitive(it: &mut Peekable<slice::Iter<u8>>, needle: &[u8]) -> bool {
     loop {
         let mut needle_it = needle.iter();
         let b = match it.next() {
@@ -152,7 +155,7 @@ fn maybe_u8_eq_ignore_ascii_case(maybe_b1: Option<&u8>, maybe_b2: Option<&u8>) -
         .unwrap_or_default()
 }
 
-fn parse_value_str(it: &mut Peekable<Iter<u8>>) -> Option<String> {
+fn parse_value_str(it: &mut Peekable<slice::Iter<u8>>) -> Option<String> {
     let mut buff = Vec::new();
     loop {
         let b = it.next()?;
@@ -164,7 +167,7 @@ fn parse_value_str(it: &mut Peekable<Iter<u8>>) -> Option<String> {
     }
 }
 
-fn parse_value_u32(it: &mut Peekable<Iter<u8>>) -> Option<u32> {
+fn parse_value_u32(it: &mut Peekable<slice::Iter<u8>>) -> Option<u32> {
     let bytes = [*it.next()?, *it.next()?, *it.next()?, *it.next()?];
     Some(u32::from_le_bytes(bytes))
 }

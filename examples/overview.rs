@@ -1,7 +1,7 @@
-use steamlocate::SteamDir;
+use steamlocate::InstallDir;
 
 fn main() {
-    let steamdir = SteamDir::locate().unwrap();
+    let steamdir = InstallDir::locate().unwrap();
     println!("Steam Dir - {:?}", steamdir.path());
 
     // TODO: use `anyhow` to make error handling here simpler
