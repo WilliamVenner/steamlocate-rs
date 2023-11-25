@@ -1,9 +1,7 @@
 use std::convert::TryInto;
 
-use crate::{
-    test_helpers::{SampleApp, TempSteamDir, TestError, TestResult},
-    Error,
-};
+use super::test_helpers::{SampleApp, TempInstallDir, TestError, TestResult};
+use crate::Error;
 
 static GMOD_ID: u32 = SampleApp::GarrysMod.id();
 
@@ -11,8 +9,8 @@ static GMOD_ID: u32 = SampleApp::GarrysMod.id();
 // - Steam must be installed
 // - At least two library folders must be setup (the steam dir acts as one)
 // - Garry's Mod along with at least one other steam app must be installed
-pub fn legacy_test_env() -> std::result::Result<TempSteamDir, TestError> {
-    TempSteamDir::builder()
+pub fn legacy_test_env() -> std::result::Result<TempInstallDir, TestError> {
+    TempInstallDir::builder()
         .app(SampleApp::GarrysMod.into())
         .library(SampleApp::GraveyardKeeper.try_into()?)
         .finish()

@@ -2,23 +2,54 @@ use std::{
     collections::BTreeMap,
     fs,
     path::{Path, PathBuf},
-    time,
+    slice, time,
 };
 
-use crate::{error::ParseErrorKind, Error, ParseError, Result};
+use crate::{
+    error::{ParseError, ParseErrorKind},
+    Error, Library, Result,
+};
 
 use serde::Deserialize;
+
+pub struct Iter<'library> {
+    library: &'library Library,
+    app_ids: slice::Iter<'library, u32>,
+}
+
+impl<'library> Iter<'library> {
+    pub(crate) fn new(library: &'library Library) -> Self {
+        Self {
+            library,
+            app_ids: library.app_ids().iter(),
+        }
+    }
+}
+
+impl<'library> Iterator for Iter<'library> {
+    type Item = Result<App>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let app_id = *self.app_ids.next()?;
+        if let some_res @ Some(_) = self.library.app(app_id) {
+            some_res
+        } else {
+            // We use the listing from libraryfolders, so all apps should be accounted for
+            Some(Err(Error::MissingExpectedApp { app_id }))
+        }
+    }
+}
 
 /// An instance of an installed Steam app.
 /// # Example
 /// ```ignore
-/// # use steamlocate::SteamDir;
-/// let mut steamdir = SteamDir::locate().unwrap();
+/// # use steamlocate::InstallDir;
+/// let mut steamdir = InstallDir::locate().unwrap();
 /// let gmod = steamdir.app(&4000);
 /// println!("{:#?}", gmod.unwrap());
 /// ```
 /// ```ignore
-/// SteamApp (
+/// App (
 ///     appid: u32: 4000,
 ///     path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
 ///     vdf: <steamy_vdf::Table>,
@@ -29,7 +60,7 @@ use serde::Deserialize;
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(test, derive(serde::Serialize))]
 #[non_exhaustive]
-pub struct SteamApp {
+pub struct App {
     /// The app ID of this Steam app.
     pub app_id: u32,
 
@@ -75,12 +106,12 @@ pub struct SteamApp {
     pub last_user: Option<u64>,
 }
 
-impl SteamApp {
+impl App {
     pub(crate) fn new(library_path: &Path, manifest: &Path) -> Result<Self> {
         let contents = fs::read_to_string(manifest).map_err(|io| Error::io(io, manifest))?;
         let internal = keyvalues_serde::from_str(&contents).map_err(|err| {
             Error::parse(
-                ParseErrorKind::SteamApp,
+                ParseErrorKind::App,
                 ParseError::from_serde(err),
                 manifest,
             )
@@ -89,7 +120,7 @@ impl SteamApp {
 
         // Check if the installation path exists and is a valid directory
         // TODO: this one check really shapes a lot of the API (in terms of how the data for the
-        // `SteamApp` is resolved. Maybe move this to something like
+        // `App` is resolved. Maybe move this to something like
         // ```rust
         // library.resolve_install_dir(&app)?;
         // ```
@@ -103,8 +134,8 @@ impl SteamApp {
         }
     }
 
-    pub(crate) fn from_internal_steam_app(internal: InternalSteamApp, library_path: &Path) -> Self {
-        let InternalSteamApp {
+    pub(crate) fn from_internal_steam_app(internal: InternalApp, library_path: &Path) -> Self {
+        let InternalApp {
             app_id,
             universe,
             launcher_path,
@@ -432,7 +463,7 @@ pub struct Depot {
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) struct InternalSteamApp {
+pub(crate) struct InternalApp {
     #[serde(rename = "appid")]
     app_id: u32,
     #[serde(rename = "installdir")]
@@ -494,9 +525,9 @@ pub(crate) struct InternalSteamApp {
 mod tests {
     use super::*;
 
-    fn app_from_manifest_str(s: &str, library_path: &Path) -> SteamApp {
-        let internal: InternalSteamApp = keyvalues_serde::from_str(s).unwrap();
-        SteamApp::from_internal_steam_app(internal, library_path)
+    fn app_from_manifest_str(s: &str, library_path: &Path) -> App {
+        let internal: InternalApp = keyvalues_serde::from_str(s).unwrap();
+        App::from_internal_steam_app(internal, library_path)
     }
 
     #[test]

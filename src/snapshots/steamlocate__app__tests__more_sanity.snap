@@ -1,8 +1,8 @@
 ---
-source: src/steamapp.rs
+source: src/app.rs
 expression: app
 ---
-SteamApp(
+App(
   app_id: 599140,
   path: "[path]",
   name: Some("Graveyard Keeper"),

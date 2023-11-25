@@ -1,10 +1,13 @@
 use std::{
     fs,
     path::{Path, PathBuf},
-    slice,
 };
 
-use crate::{error::ParseErrorKind, Error, ParseError, Result, SteamApp};
+use crate::{
+    app,
+    error::{ParseError, ParseErrorKind},
+    App, Error, Result,
+};
 
 use keyvalues_parser::Vdf;
 
@@ -39,7 +42,7 @@ use keyvalues_parser::Vdf;
 ///     ...
 /// }
 /// ```
-pub fn parse_library_folders(path: &Path) -> Result<LibraryIter> {
+pub(crate) fn parse_library_folders(path: &Path) -> Result<Iter> {
     let parse_error = |err| Error::parse(ParseErrorKind::LibraryFolders, err, path);
 
     if !path.is_file() {
@@ -68,16 +71,16 @@ pub fn parse_library_folders(path: &Path) -> Result<LibraryIter> {
         })
         .collect::<Result<_>>()?;
 
-    Ok(LibraryIter {
+    Ok(Iter {
         paths: paths.into_iter(),
     })
 }
 
-pub struct LibraryIter {
+pub struct Iter {
     paths: std::vec::IntoIter<PathBuf>,
 }
 
-impl Iterator for LibraryIter {
+impl Iterator for Iter {
     type Item = Result<Library>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -85,7 +88,7 @@ impl Iterator for LibraryIter {
     }
 }
 
-impl ExactSizeIterator for LibraryIter {
+impl ExactSizeIterator for Iter {
     fn len(&self) -> usize {
         self.paths.len()
     }
@@ -128,39 +131,17 @@ impl Library {
         &self.apps
     }
 
-    pub fn app(&self, app_id: u32) -> Option<Result<SteamApp>> {
+    pub fn app(&self, app_id: u32) -> Option<Result<App>> {
         self.app_ids().iter().find(|&&id| id == app_id).map(|&id| {
             let manifest_path = self
                 .path()
                 .join("steamapps")
                 .join(format!("appmanifest_{}.acf", id));
-            SteamApp::new(&self.path, &manifest_path)
+            App::new(&self.path, &manifest_path)
         })
     }
 
-    pub fn apps(&self) -> AppIter {
-        AppIter {
-            library: self,
-            app_ids: self.app_ids().iter(),
-        }
-    }
-}
-
-pub struct AppIter<'library> {
-    library: &'library Library,
-    app_ids: slice::Iter<'library, u32>,
-}
-
-impl<'library> Iterator for AppIter<'library> {
-    type Item = Result<SteamApp>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let app_id = *self.app_ids.next()?;
-        if let some_res @ Some(_) = self.library.app(app_id) {
-            some_res
-        } else {
-            // We use the listing from libraryfolders, so all apps should be accounted for
-            Some(Err(Error::MissingExpectedApp { app_id }))
-        }
+    pub fn apps(&self) -> app::Iter {
+        app::Iter::new(self)
     }
 }
