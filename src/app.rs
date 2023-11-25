@@ -110,11 +110,7 @@ impl App {
     pub(crate) fn new(library_path: &Path, manifest: &Path) -> Result<Self> {
         let contents = fs::read_to_string(manifest).map_err(|io| Error::io(io, manifest))?;
         let internal = keyvalues_serde::from_str(&contents).map_err(|err| {
-            Error::parse(
-                ParseErrorKind::App,
-                ParseError::from_serde(err),
-                manifest,
-            )
+            Error::parse(ParseErrorKind::App, ParseError::from_serde(err), manifest)
         })?;
         let app = Self::from_internal_steam_app(internal, library_path);
 
