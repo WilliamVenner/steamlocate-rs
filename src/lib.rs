@@ -121,6 +121,7 @@
 )]
 
 pub mod app;
+pub mod config;
 pub mod error;
 pub mod library;
 #[cfg(feature = "locate")]
@@ -129,9 +130,14 @@ pub mod shortcut;
 #[cfg(any(test, doctest))]
 pub mod tests;
 
+use std::collections::HashMap;
+use std::fs;
 use std::path::{Path, PathBuf};
 
+use crate::error::{ParseError, ParseErrorKind};
+
 pub use crate::app::App;
+pub use crate::config::CompatTool;
 pub use crate::error::{Error, Result};
 pub use crate::library::Library;
 pub use crate::shortcut::Shortcut;
@@ -202,6 +208,21 @@ impl InstallDir {
                 .find_map(|lib| lib.app(app_id))
                 .transpose(),
         }
+    }
+
+    pub fn compat_tool_mapping(&self) -> Result<HashMap<u32, CompatTool>> {
+        let config_path = self.path.join("config").join("config.vdf");
+        let vdf_text =
+            fs::read_to_string(&config_path).map_err(|io| Error::io(io, &config_path))?;
+        let store: config::Store = keyvalues_serde::from_str(&vdf_text).map_err(|de| {
+            Error::parse(
+                ParseErrorKind::Config,
+                ParseError::from_serde(de),
+                &config_path,
+            )
+        })?;
+
+        Ok(store.software.valve.steam.mapping)
     }
 
     /// Returns a listing of all added non-Steam games
