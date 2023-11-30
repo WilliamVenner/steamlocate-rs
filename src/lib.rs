@@ -121,6 +121,7 @@
 )]
 
 pub mod app;
+pub mod config;
 pub mod error;
 pub mod library;
 #[cfg(feature = "locate")]
@@ -129,19 +130,17 @@ pub mod shortcut;
 #[cfg(any(test, doctest))]
 pub mod tests;
 
+use std::collections::HashMap;
+use std::fs;
 use std::path::{Path, PathBuf};
 
+use crate::error::{ParseError, ParseErrorKind};
+
 pub use crate::app::App;
+pub use crate::config::CompatTool;
 pub use crate::error::{Error, Result};
 pub use crate::library::Library;
 pub use crate::shortcut::Shortcut;
-
-#[doc(hidden)]
-mod steamcompat;
-use steamcompat::SteamCompat;
-
-mod steamcompats;
-use steamcompats::SteamCompats;
 
 /// An instance of a Steam installation.
 ///
@@ -211,20 +210,19 @@ impl InstallDir {
         }
     }
 
-    /// Returns a `Some` reference to a `SteamCompat` via its app ID.
-    ///
-    /// If no compatibility tool is configured for the app, this will return `None`.
-    ///
-    /// This function will cache its (either `Some` and `None`) result and will always return a reference to the same `SteamCompat`.
-    pub fn compat_tool(&mut self, app_id: &u32) -> Option<&SteamCompat> {
-        todo!();
-        // let steam_compat = &mut self.steam_compat;
+    pub fn compat_tool_mapping(&self) -> Result<HashMap<u32, CompatTool>> {
+        let config_path = self.path.join("config").join("config.vdf");
+        let vdf_text =
+            fs::read_to_string(&config_path).map_err(|io| Error::io(io, &config_path))?;
+        let store: config::Store = keyvalues_serde::from_str(&vdf_text).map_err(|de| {
+            Error::parse(
+                ParseErrorKind::Config,
+                ParseError::from_serde(de),
+                &config_path,
+            )
+        })?;
 
-        // if !steam_compat.tools.contains_key(app_id) {
-        //     steam_compat.discover_tool(&self.path, app_id)
-        // }
-
-        // steam_compat.tools.get(app_id).unwrap().as_ref()
+        Ok(store.software.valve.steam.mapping)
     }
 
     /// Returns a listing of all added non-Steam games

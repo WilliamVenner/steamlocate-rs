@@ -77,6 +77,7 @@ impl Error {
 #[derive(Copy, Clone, Debug)]
 #[non_exhaustive]
 pub enum ParseErrorKind {
+    Config,
     LibraryFolders,
     App,
     Shortcut,
