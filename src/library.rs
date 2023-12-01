@@ -84,7 +84,7 @@ impl Iterator for Iter {
     type Item = Result<Library>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.paths.next().map(Library::new)
+        self.paths.next().map(|path| Library::from_dir(&path))
     }
 }
 
@@ -101,7 +101,7 @@ pub struct Library {
 }
 
 impl Library {
-    fn new(path: PathBuf) -> Result<Self> {
+    pub fn from_dir(path: &Path) -> Result<Self> {
         // Read the manifest files at the library to get an up-to-date list of apps since the
         // values in `libraryfolders.vdf` may be stale
         let mut apps = Vec::new();
@@ -119,7 +119,10 @@ impl Library {
             }
         }
 
-        Ok(Self { path, apps })
+        Ok(Self {
+            path: path.to_owned(),
+            apps,
+        })
     }
 
     pub fn path(&self) -> &Path {
