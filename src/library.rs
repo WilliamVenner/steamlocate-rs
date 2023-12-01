@@ -42,7 +42,7 @@ use keyvalues_parser::Vdf;
 ///     ...
 /// }
 /// ```
-pub(crate) fn parse_library_folders(path: &Path) -> Result<Iter> {
+pub(crate) fn parse_library_paths(path: &Path) -> Result<Vec<PathBuf>> {
     let parse_error = |err| Error::parse(ParseErrorKind::LibraryFolders, err, path);
 
     if !path.is_file() {
@@ -71,13 +71,19 @@ pub(crate) fn parse_library_folders(path: &Path) -> Result<Iter> {
         })
         .collect::<Result<_>>()?;
 
-    Ok(Iter {
-        paths: paths.into_iter(),
-    })
+    Ok(paths)
 }
 
 pub struct Iter {
     paths: std::vec::IntoIter<PathBuf>,
+}
+
+impl Iter {
+    pub(crate) fn new(paths: Vec<PathBuf>) -> Self {
+        Self {
+            paths: paths.into_iter(),
+        }
+    }
 }
 
 impl Iterator for Iter {
