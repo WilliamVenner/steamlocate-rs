@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use super::test_helpers::{SampleApp, TempSteamDir, TestError, TestResult};
+use super::helpers::{SampleApp, TempSteamDir, TestError, TestResult};
 use crate::Error;
 
 static GMOD_ID: u32 = SampleApp::GarrysMod.id();
