@@ -43,8 +43,8 @@ impl<'library> Iterator for Iter<'library> {
 /// An instance of an installed Steam app.
 /// # Example
 /// ```ignore
-/// # use steamlocate::InstallDir;
-/// let mut steamdir = InstallDir::locate().unwrap();
+/// # use steamlocate::SteamDir;
+/// let mut steamdir = SteamDir::locate().unwrap();
 /// let gmod = steamdir.app(&4000);
 /// println!("{:#?}", gmod.unwrap());
 /// ```

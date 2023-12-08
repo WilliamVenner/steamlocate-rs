@@ -9,7 +9,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[non_exhaustive]
 pub enum Error {
     // TODO: people would probably appreciate more context here even if it has to be opaque
-    FailedLocatingInstallDir,
+    FailedLocatingSteamDir,
     Io {
         inner: std::io::Error,
         path: PathBuf,
@@ -31,7 +31,7 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::FailedLocatingInstallDir => f.write_str("Failed locating the steam dir"),
+            Self::FailedLocatingSteamDir => f.write_str("Failed locating the steam dir"),
             Self::Io { inner: err, path } => {
                 write!(f, "Encountered an I/O error: {} at {}", err, path.display())
             }
