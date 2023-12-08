@@ -42,7 +42,7 @@ use keyvalues_parser::Vdf;
 ///     ...
 /// }
 /// ```
-pub(crate) fn parse_library_folders(path: &Path) -> Result<Iter> {
+pub(crate) fn parse_library_paths(path: &Path) -> Result<Vec<PathBuf>> {
     let parse_error = |err| Error::parse(ParseErrorKind::LibraryFolders, err, path);
 
     if !path.is_file() {
@@ -71,20 +71,26 @@ pub(crate) fn parse_library_folders(path: &Path) -> Result<Iter> {
         })
         .collect::<Result<_>>()?;
 
-    Ok(Iter {
-        paths: paths.into_iter(),
-    })
+    Ok(paths)
 }
 
 pub struct Iter {
     paths: std::vec::IntoIter<PathBuf>,
 }
 
+impl Iter {
+    pub(crate) fn new(paths: Vec<PathBuf>) -> Self {
+        Self {
+            paths: paths.into_iter(),
+        }
+    }
+}
+
 impl Iterator for Iter {
     type Item = Result<Library>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.paths.next().map(Library::new)
+        self.paths.next().map(|path| Library::from_dir(&path))
     }
 }
 
@@ -101,7 +107,7 @@ pub struct Library {
 }
 
 impl Library {
-    fn new(path: PathBuf) -> Result<Self> {
+    pub fn from_dir(path: &Path) -> Result<Self> {
         // Read the manifest files at the library to get an up-to-date list of apps since the
         // values in `libraryfolders.vdf` may be stale
         let mut apps = Vec::new();
@@ -119,7 +125,10 @@ impl Library {
             }
         }
 
-        Ok(Self { path, apps })
+        Ok(Self {
+            path: path.to_owned(),
+            apps,
+        })
     }
 
     pub fn path(&self) -> &Path {
