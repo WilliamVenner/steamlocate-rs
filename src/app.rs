@@ -248,27 +248,27 @@ impl From<u64> for Universe {
 pub struct StateFlags(pub u64);
 
 impl StateFlags {
-    pub fn flags(self) -> FlagIter {
+    pub fn flags(self) -> StateFlagIter {
         self.into()
     }
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct FlagIter(Option<FlagIterInner>);
+pub struct StateFlagIter(Option<StateFlagIterInner>);
 
-impl FlagIter {
+impl StateFlagIter {
     fn from_valid(valid: ValidIter) -> Self {
-        Self(Some(FlagIterInner::Valid(valid)))
+        Self(Some(StateFlagIterInner::Valid(valid)))
     }
 }
 
-impl From<StateFlags> for FlagIter {
+impl From<StateFlags> for StateFlagIter {
     fn from(state: StateFlags) -> Self {
         Self(Some(state.into()))
     }
 }
 
-impl Iterator for FlagIter {
+impl Iterator for StateFlagIter {
     type Item = StateFlag;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -278,8 +278,8 @@ impl Iterator for FlagIter {
         // - Valid will pull on the inner iterator till it's finished
         let current = std::mem::take(self);
         let (next, ret) = match current.0? {
-            FlagIterInner::Invalid => (Self::default(), StateFlag::Invalid),
-            FlagIterInner::Valid(mut valid) => {
+            StateFlagIterInner::Invalid => (Self::default(), StateFlag::Invalid),
+            StateFlagIterInner::Valid(mut valid) => {
                 let ret = valid.next()?;
                 (Self::from_valid(valid), ret)
             }
@@ -290,13 +290,13 @@ impl Iterator for FlagIter {
 }
 
 #[derive(Clone, Debug, Default)]
-enum FlagIterInner {
+enum StateFlagIterInner {
     #[default]
     Invalid,
     Valid(ValidIter),
 }
 
-impl From<StateFlags> for FlagIterInner {
+impl From<StateFlags> for StateFlagIterInner {
     fn from(state: StateFlags) -> Self {
         if state.0 == 0 {
             Self::Invalid
