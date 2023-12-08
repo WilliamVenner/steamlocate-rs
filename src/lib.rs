@@ -172,9 +172,14 @@ impl InstallDir {
         &self.path
     }
 
-    pub fn libraries(&self) -> Result<library::Iter> {
+    pub fn library_paths(&self) -> Result<Vec<PathBuf>> {
         let libraryfolders_vdf = self.path.join("steamapps").join("libraryfolders.vdf");
-        library::parse_library_folders(&libraryfolders_vdf)
+        library::parse_library_paths(&libraryfolders_vdf)
+    }
+
+    pub fn libraries(&self) -> Result<library::Iter> {
+        let paths = self.library_paths()?;
+        Ok(library::Iter::new(paths))
     }
 
     /// Returns a `Some` reference to a `App` via its app ID.
