@@ -1,6 +1,6 @@
 use std::{env, process::exit};
 
-use steamlocate::InstallDir;
+use steamlocate::SteamDir;
 
 fn main() {
     let args: Vec<_> = env::args().collect();
@@ -10,7 +10,7 @@ fn main() {
     }
     let app_id: u32 = args[1].parse().expect("<STEAM_APP_ID> should be a u32");
 
-    let steam_dir = InstallDir::locate().unwrap();
+    let steam_dir = SteamDir::locate().unwrap();
     match steam_dir.app(app_id) {
         Ok(Some(app)) => println!("Found app - {:#?}", app),
         Ok(None) => println!("No app found for {}", app_id),

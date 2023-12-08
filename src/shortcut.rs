@@ -252,14 +252,22 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "shortcuts_extras")]
+    #[cfg_attr(
+        not(feature = "shortcuts_extras"),
+        ignore = "Needs `shortcuts_extras` feature"
+    )]
     #[test]
     fn shortcuts_extras() {
-        let contents = include_bytes!("../tests/sample_data/shortcuts.vdf");
-        let shortcuts = parse_shortcuts(contents).unwrap();
-        let ideal_ids = vec![0xe89614fe02000000, 0xdb01c79902000000, 0x9d55017302000000];
-        for (id, shortcut) in ideal_ids.into_iter().zip(shortcuts.iter()) {
-            assert_eq!(id, shortcut.steam_id());
+        #[cfg(not(feature = "shortcuts_extras"))]
+        unreachable!();
+        #[cfg(feature = "shortcuts_extras")]
+        {
+            let contents = include_bytes!("../tests/sample_data/shortcuts.vdf");
+            let shortcuts = parse_shortcuts(contents).unwrap();
+            let ideal_ids = vec![0xe89614fe02000000, 0xdb01c79902000000, 0x9d55017302000000];
+            for (id, shortcut) in ideal_ids.into_iter().zip(shortcuts.iter()) {
+                assert_eq!(id, shortcut.steam_id());
+            }
         }
     }
 }

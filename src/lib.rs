@@ -22,7 +22,7 @@
 //! # Caching
 //! All functions in this crate cache their results, meaning you can call them as many times as you like and they will always return the same reference.
 //!
-//! If you need to get uncached results, simply instantiate a new [InstallDir](https://docs.rs/steamlocate/*/steamlocate/struct.InstallDir.html).
+//! If you need to get uncached results, simply instantiate a new [SteamDir](https://docs.rs/steamlocate/*/steamlocate/struct.SteamDir.html).
 //!
 //! # steamid-ng Support
 //! This crate supports [steamid-ng](https://docs.rs/steamid-ng) and can automatically convert [App::last_user](struct.App.html#structfield.last_user) to a [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) for you.
@@ -34,15 +34,15 @@
 //! ### Locate the installed Steam directory
 //! ```rust,ignore
 //! extern crate steamlocate;
-//! use steamlocate::InstallDir;
+//! use steamlocate::SteamDir;
 //!
-//! match InstallDir::locate() {
+//! match SteamDir::locate() {
 //!     Ok(steamdir) => println!("{:#?}", steamdir),
 //!     Err(_) => panic!("Couldn't locate Steam on this computer!")
 //! }
 //! ```
 //! ```ignore
-//! InstallDir (
+//! SteamDir (
 //!     path: PathBuf: "C:\\Program Files (x86)\\Steam"
 //! )
 //! ```
@@ -51,9 +51,9 @@
 //! This will locate Garry's Mod anywhere on the filesystem.
 //! ```ignore
 //! extern crate steamlocate;
-//! use steamlocate::InstallDir;
+//! use steamlocate::SteamDir;
 //!
-//! let mut steamdir = InstallDir::locate().unwrap();
+//! let mut steamdir = SteamDir::locate().unwrap();
 //! match steamdir.app(&4000) {
 //!     Some(app) => println!("{:#?}", app),
 //!     None => panic!("Couldn't locate Garry's Mod on this computer!")
@@ -72,10 +72,10 @@
 //! ### Locate all Steam apps on this filesystem
 //! ```ignore
 //! extern crate steamlocate;
-//! use steamlocate::{InstallDir, App};
+//! use steamlocate::{SteamDir, App};
 //! use std::collections::HashMap;
 //!
-//! let mut steamdir = InstallDir::locate().unwrap();
+//! let mut steamdir = SteamDir::locate().unwrap();
 //! let apps: &HashMap<u32, Option<App>> = steamdir.apps();
 //!
 //! println!("{:#?}", apps);
@@ -96,10 +96,10 @@
 //! ### Locate all Steam library folders
 //! ```ignore
 //! extern crate steamlocate;
-//! use steamlocate::{InstallDir, LibraryFolders};
+//! use steamlocate::{SteamDir, LibraryFolders};
 //! use std::{vec, path::PathBuf};
 //!
-//! let mut steamdir: InstallDir = InstallDir::locate().unwrap();
+//! let mut steamdir: SteamDir = SteamDir::locate().unwrap();
 //! let libraryfolders: &LibraryFolders = steamdir.libraryfolders();
 //! let paths: &Vec<PathBuf> = &libraryfolders.paths;
 //!
@@ -146,25 +146,25 @@ pub use crate::shortcut::Shortcut;
 ///
 /// All functions of this struct will cache their results.
 ///
-/// If you'd like to dispose of the cache or get uncached results, just instantiate a new `InstallDir`.
+/// If you'd like to dispose of the cache or get uncached results, just instantiate a new `SteamDir`.
 ///
 /// # Example
 /// ```rust,ignore
-/// # use steamlocate::InstallDir;
-/// let steamdir = InstallDir::locate();
+/// # use steamlocate::SteamDir;
+/// let steamdir = SteamDir::locate();
 /// println!("{:#?}", steamdir.unwrap());
 /// ```
 /// ```ignore
-/// InstallDir (
+/// SteamDir (
 ///     path: "C:\\Program Files (x86)\\Steam"
 /// )
 /// ```
 #[derive(Clone, Debug)]
-pub struct InstallDir {
+pub struct SteamDir {
     path: PathBuf,
 }
 
-impl InstallDir {
+impl SteamDir {
     /// The path to the Steam installation directory on this computer.
     ///
     /// Example: `C:\Program Files (x86)\Steam`
@@ -190,8 +190,8 @@ impl InstallDir {
     ///
     /// # Example
     /// ```ignore
-    /// # use steamlocate::InstallDir;
-    /// let mut steamdir = InstallDir::locate().unwrap();
+    /// # use steamlocate::SteamDir;
+    /// let mut steamdir = SteamDir::locate().unwrap();
     /// let gmod = steamdir.app(&4000);
     /// println!("{:#?}", gmod.unwrap());
     /// ```
@@ -235,9 +235,9 @@ impl InstallDir {
         shortcut::Iter::new(&self.path)
     }
 
-    pub fn from_steam_dir(path: &Path) -> Result<InstallDir> {
+    pub fn from_steam_dir(path: &Path) -> Result<SteamDir> {
         if !path.is_dir() {
-            return Err(Error::FailedLocatingInstallDir);
+            return Err(Error::FailedLocatingSteamDir);
         }
 
         // TODO(cosmic): should we do some kind of extra validation here? Could also use validation
@@ -247,12 +247,12 @@ impl InstallDir {
         })
     }
 
-    /// Locates the Steam installation directory on the filesystem and initializes a `InstallDir` (Windows)
+    /// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (Windows)
     ///
     /// Returns `None` if no Steam installation can be located.
     #[cfg(feature = "locate")]
-    pub fn locate() -> Result<InstallDir> {
-        let path = locate::locate_steam_dir().ok_or(Error::FailedLocatingInstallDir)?;
+    pub fn locate() -> Result<SteamDir> {
+        let path = locate::locate_steam_dir().ok_or(Error::FailedLocatingSteamDir)?;
 
         Ok(Self { path })
     }

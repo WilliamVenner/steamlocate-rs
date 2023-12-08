@@ -9,7 +9,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::InstallDir;
+use crate::SteamDir;
 
 use serde::Serialize;
 use tempfile::TempDir;
@@ -25,12 +25,12 @@ pub type TestError = Box<dyn std::error::Error>;
 pub type TestResult = Result<(), TestError>;
 
 // TODO(cosmic): Add in functionality for providing shortcuts too
-pub struct TempInstallDir {
-    steam_dir: crate::InstallDir,
+pub struct TempSteamDir {
+    steam_dir: crate::SteamDir,
     _tmps: Vec<TempDir>,
 }
 
-impl TryFrom<AppFile> for TempInstallDir {
+impl TryFrom<AppFile> for TempSteamDir {
     type Error = TestError;
 
     fn try_from(app: AppFile) -> Result<Self, Self::Error> {
@@ -38,7 +38,7 @@ impl TryFrom<AppFile> for TempInstallDir {
     }
 }
 
-impl TryFrom<SampleApp> for TempInstallDir {
+impl TryFrom<SampleApp> for TempSteamDir {
     type Error = TestError;
 
     fn try_from(sample_app: SampleApp) -> Result<Self, Self::Error> {
@@ -46,24 +46,24 @@ impl TryFrom<SampleApp> for TempInstallDir {
     }
 }
 
-impl TempInstallDir {
-    pub fn builder() -> TempInstallDirBuilder {
-        TempInstallDirBuilder::default()
+impl TempSteamDir {
+    pub fn builder() -> TempSteamDirBuilder {
+        TempSteamDirBuilder::default()
     }
 
-    pub fn steam_dir(&self) -> &InstallDir {
+    pub fn steam_dir(&self) -> &SteamDir {
         &self.steam_dir
     }
 }
 
 #[derive(Default)]
 #[must_use]
-pub struct TempInstallDirBuilder {
+pub struct TempSteamDirBuilder {
     libraries: Vec<TempLibrary>,
     apps: Vec<AppFile>,
 }
 
-impl TempInstallDirBuilder {
+impl TempSteamDirBuilder {
     pub fn app(mut self, app: AppFile) -> Self {
         self.apps.push(app);
         self
@@ -75,7 +75,7 @@ impl TempInstallDirBuilder {
     }
 
     // Steam dir is also a library, but is laid out slightly differently than a regular library
-    pub fn finish(self) -> Result<TempInstallDir, TestError> {
+    pub fn finish(self) -> Result<TempSteamDir, TestError> {
         let tmp = test_temp_dir()?;
         let root_dir = tmp.path().join("test-steam-dir");
         let steam_dir = root_dir.join("Steam");
@@ -94,8 +94,8 @@ impl TempInstallDirBuilder {
             .chain(self.libraries.into_iter().map(|library| library._tmp))
             .collect();
 
-        Ok(TempInstallDir {
-            steam_dir: InstallDir::from_steam_dir(&steam_dir)?,
+        Ok(TempSteamDir {
+            steam_dir: SteamDir::from_steam_dir(&steam_dir)?,
             _tmps: tmps,
         })
     }
@@ -290,7 +290,7 @@ impl SampleApp {
 
 #[test]
 fn sanity() -> TestResult {
-    let tmp_steam_dir = TempInstallDir::try_from(SampleApp::GarrysMod)?;
+    let tmp_steam_dir = TempSteamDir::try_from(SampleApp::GarrysMod)?;
     let steam_dir = tmp_steam_dir.steam_dir();
     assert!(steam_dir.app(SampleApp::GarrysMod.id()).unwrap().is_some());
 
