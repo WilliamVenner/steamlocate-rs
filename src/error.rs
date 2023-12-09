@@ -1,5 +1,5 @@
 use std::{
-    fmt,
+    fmt, io,
     path::{Path, PathBuf},
 };
 
@@ -8,10 +8,10 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum Error {
-    // TODO: people would probably appreciate more context here even if it has to be opaque
-    FailedLocatingSteamDir,
+    FailedLocate(LocateError),
+    InvalidSteamDir(ValidationError),
     Io {
-        inner: std::io::Error,
+        inner: io::Error,
         path: PathBuf,
     },
     Parse {
@@ -31,7 +31,12 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::FailedLocatingSteamDir => f.write_str("Failed locating the steam dir"),
+            Self::FailedLocate(error) => {
+                write!(f, "Failed locating the steam dir. Error: {error}")
+            }
+            Self::InvalidSteamDir(error) => {
+                write!(f, "Failed validating steam dir. Error: {error}")
+            }
             Self::Io { inner: err, path } => {
                 write!(f, "Encountered an I/O error: {} at {}", err, path.display())
             }
@@ -58,7 +63,15 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 
 impl Error {
-    pub(crate) fn io(io: std::io::Error, path: &Path) -> Self {
+    pub(crate) fn locate(locate: LocateError) -> Self {
+        Self::FailedLocate(locate)
+    }
+
+    pub(crate) fn validation(validation: ValidationError) -> Self {
+        Self::InvalidSteamDir(validation)
+    }
+
+    pub(crate) fn io(io: io::Error, path: &Path) -> Self {
         Self::Io {
             inner: io,
             path: path.to_owned(),
@@ -72,6 +85,98 @@ impl Error {
             path: path.to_owned(),
         }
     }
+}
+
+#[derive(Clone, Debug)]
+pub enum LocateError {
+    Backend(BackendError),
+    Unsupported,
+}
+
+impl LocateError {
+    #[cfg(all(feature = "locate", target_os = "windows"))]
+    pub(crate) fn winreg(io: io::Error) -> Self {
+        Self::Backend(BackendError {
+            inner: BackendErrorInner(std::sync::Arc::new(io)),
+        })
+    }
+
+    #[cfg(all(feature = "locate", not(target_os = "windows")))]
+    pub(crate) fn no_home() -> Self {
+        Self::Backend(BackendError {
+            inner: BackendErrorInner::NoHome,
+        })
+    }
+}
+
+impl fmt::Display for LocateError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Backend(error) => error.fmt(f),
+            Self::Unsupported => f.write_str("Unsupported platform"),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct BackendError {
+    #[allow(dead_code)] // Only used for displaying currently
+    inner: BackendErrorInner,
+}
+
+impl fmt::Display for BackendError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        #[cfg(all(feature = "locate", target_os = "windows"))]
+        {
+            write!(f, "{}", self.inner.0)
+        }
+        #[cfg(all(feature = "locate", not(target_os = "windows")))]
+        {
+            match self.inner {
+                BackendErrorInner::NoHome => f.write_str("Unable to locate the user's $HOME"),
+            }
+        }
+    }
+}
+
+// TODO: move all this conditional junk into different modules, so that I don't have to keep
+// repeating it everywhere
+#[derive(Clone, Debug)]
+#[cfg(all(feature = "locate", target_os = "windows"))]
+struct BackendErrorInner(std::sync::Arc<io::Error>);
+#[derive(Clone, Debug)]
+#[cfg(all(feature = "locate", not(target_os = "windows")))]
+enum BackendErrorInner {
+    NoHome,
+}
+
+#[derive(Clone, Debug)]
+pub struct ValidationError {
+    #[allow(dead_code)] // Only used for displaying currently
+    inner: ValidationErrorInner,
+}
+
+impl ValidationError {
+    pub(crate) fn missing_dir() -> Self {
+        Self {
+            inner: ValidationErrorInner::MissingDirectory,
+        }
+    }
+}
+
+impl fmt::Display for ValidationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.inner {
+            ValidationErrorInner::MissingDirectory => f.write_str(
+                "The Steam installation directory either isn't a directory or doesn't exist",
+            ),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+enum ValidationErrorInner {
+    MissingDirectory,
 }
 
 #[derive(Copy, Clone, Debug)]
