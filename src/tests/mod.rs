@@ -1,3 +1,3 @@
 pub mod helpers;
 #[cfg(test)]
-mod tests;
+mod legacy;
