@@ -117,7 +117,9 @@
 
 #![warn(
 	// We're a library after all
-	clippy::print_stderr, clippy::print_stdout
+	clippy::print_stderr, clippy::print_stdout,
+	// Honestly just good in general
+	clippy::todo,
 )]
 
 pub mod app;
@@ -133,6 +135,8 @@ pub mod tests;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+
+use error::ValidationError;
 
 use crate::error::{ParseError, ParseErrorKind};
 
@@ -237,7 +241,7 @@ impl SteamDir {
 
     pub fn from_steam_dir(path: &Path) -> Result<SteamDir> {
         if !path.is_dir() {
-            return Err(Error::FailedLocatingSteamDir);
+            return Err(Error::validation(ValidationError::missing_dir()));
         }
 
         // TODO(cosmic): should we do some kind of extra validation here? Could also use validation
@@ -252,8 +256,8 @@ impl SteamDir {
     /// Returns `None` if no Steam installation can be located.
     #[cfg(feature = "locate")]
     pub fn locate() -> Result<SteamDir> {
-        let path = locate::locate_steam_dir().ok_or(Error::FailedLocatingSteamDir)?;
+        let path = locate::locate_steam_dir()?;
 
-        Ok(Self { path })
+        Self::from_steam_dir(&path)
     }
 }
