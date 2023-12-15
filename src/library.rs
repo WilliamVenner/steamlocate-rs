@@ -146,11 +146,18 @@ impl Library {
                 .path()
                 .join("steamapps")
                 .join(format!("appmanifest_{}.acf", id));
-            App::new(&self.path, &manifest_path)
+            App::new(&manifest_path)
         })
     }
 
     pub fn apps(&self) -> app::Iter {
         app::Iter::new(self)
+    }
+
+    pub fn resolve_app_dir(&self, app: &App) -> PathBuf {
+        self.path
+            .join("steamapps")
+            .join("common")
+            .join(&app.install_dir)
     }
 }

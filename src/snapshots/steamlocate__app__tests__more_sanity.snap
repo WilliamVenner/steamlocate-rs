@@ -3,48 +3,48 @@ source: src/app.rs
 expression: app
 ---
 App(
-  app_id: 599140,
-  path: "[path]",
+  appid: 599140,
+  installdir: "Graveyard Keeper",
   name: Some("Graveyard Keeper"),
-  universe: Some(Public),
-  launcher_path: None,
-  state_flags: Some(StateFlags(6)),
-  last_updated: Some(SystemTime(
+  Universe: Some(Public),
+  LauncherPath: None,
+  StateFlags: Some(StateFlags(6)),
+  LastUpdated: Some(SystemTime(
     secs_since_epoch: 1672176869,
     nanos_since_epoch: 0,
   )),
-  update_result: Some(0),
-  size_on_disk: Some(1805798572),
-  build_id: Some(8559806),
-  bytes_to_download: Some(24348080),
-  bytes_downloaded: Some(0),
-  bytes_to_stage: Some(1284862702),
-  bytes_staged: Some(0),
-  staging_size: Some(0),
-  target_build_id: Some(8559806),
-  auto_update_behavior: OnlyUpdateOnLaunch,
-  allow_other_downloads_while_running: Allow,
-  scheduled_auto_update: Some(SystemTime(
+  UpdateResult: Some(0),
+  SizeOnDisk: Some(1805798572),
+  buildid: Some(8559806),
+  BytesToDownload: Some(24348080),
+  BytesDownloaded: Some(0),
+  BytesToStage: Some(1284862702),
+  BytesStaged: Some(0),
+  StagingSize: Some(0),
+  TargetBuildID: Some(8559806),
+  AutoUpdateBehavior: Some(OnlyUpdateOnLaunch),
+  AllowOtherDownloadsWhileRunning: Some(Allow),
+  ScheduledAutoUpdate: Some(Time(SystemTime(
     secs_since_epoch: 1678457806,
     nanos_since_epoch: 0,
-  )),
-  full_validate_before_next_update: false,
-  full_validate_after_next_update: false,
-  installed_depots: {
+  ))),
+  FullValidateBeforeNextUpdate: None,
+  FullValidateAfterNextUpdate: None,
+  InstalledDepots: {
     599143: Depot(
       manifest: 8776335556818666951,
       size: 1805798572,
       dlcappid: None,
     ),
   },
-  staged_depots: {},
-  user_config: {
+  StagedDepots: {},
+  UserConfig: {
     "language": "english",
   },
-  mounted_config: {
+  MountedConfig: {
     "language": "english",
   },
-  install_scripts: {},
-  shared_depots: {},
-  last_user: Some(12312312312312312),
+  InstallScripts: {},
+  SharedDepots: {},
+  LastOwner: Some(12312312312312312),
 )
