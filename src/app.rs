@@ -10,7 +10,7 @@ use crate::{
     Error, Library, Result,
 };
 
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 
 pub struct Iter<'library> {
     library: &'library Library,
@@ -57,45 +57,65 @@ impl<'library> Iterator for Iter<'library> {
 ///     last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
 /// )
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[cfg_attr(test, derive(serde::Serialize))]
 #[non_exhaustive]
+#[serde(rename_all = "PascalCase")]
 pub struct App {
     /// The app ID of this Steam app.
+    #[serde(rename = "appid")]
     pub app_id: u32,
 
-    /// The path to the installation directory of this Steam app.
+    /// The name of the installation directory of this Steam app.
     ///
-    /// Example: `C:\Program Files (x86)\Steam\steamapps\common\GarrysMod`
-    pub path: PathBuf,
+    /// Example: `"GarrysMod"`
+    ///
+    /// This can be resolved to the actual path off of the library
+    ///
+    /// ```rust,ignore
+    /// let app_dir = library.resolve_app_dir(&app);
+    /// ```
+    #[serde(rename = "installdir")]
+    pub install_dir: String,
 
     /// The store name of the Steam app.
+    #[serde(rename = "name")]
     pub name: Option<String>,
 
     pub universe: Option<Universe>,
     pub launcher_path: Option<PathBuf>,
     pub state_flags: Option<StateFlags>,
+    // TODO: Need to handle this for serializing too before `App` can `impl Serialize`
+    #[serde(deserialize_with = "de_time_as_secs_from_unix_epoch")]
     pub last_updated: Option<time::SystemTime>,
     // Can't find anything on what these values mean. I've seen 0, 2, 4, 6, and 7
     pub update_result: Option<u64>,
     pub size_on_disk: Option<u64>,
+    #[serde(rename = "buildid")]
     pub build_id: Option<u64>,
     pub bytes_to_download: Option<u64>,
     pub bytes_downloaded: Option<u64>,
     pub bytes_to_stage: Option<u64>,
     pub bytes_staged: Option<u64>,
     pub staging_size: Option<u64>,
+    #[serde(rename = "TargetBuildID")]
     pub target_build_id: Option<u64>,
-    pub auto_update_behavior: AutoUpdateBehavior,
-    pub allow_other_downloads_while_running: AllowOtherDownloadsWhileRunning,
-    pub scheduled_auto_update: Option<time::SystemTime>,
-    pub full_validate_before_next_update: bool,
-    pub full_validate_after_next_update: bool,
+    pub auto_update_behavior: Option<AutoUpdateBehavior>,
+    pub allow_other_downloads_while_running: Option<AllowOtherDownloadsWhileRunning>,
+    pub scheduled_auto_update: Option<ScheduledAutoUpdate>,
+    pub full_validate_before_next_update: Option<bool>,
+    pub full_validate_after_next_update: Option<bool>,
+    #[serde(default)]
     pub installed_depots: BTreeMap<u64, Depot>,
+    #[serde(default)]
     pub staged_depots: BTreeMap<u64, Depot>,
+    #[serde(default)]
     pub user_config: BTreeMap<String, String>,
+    #[serde(default)]
     pub mounted_config: BTreeMap<String, String>,
+    #[serde(default)]
     pub install_scripts: BTreeMap<u64, PathBuf>,
+    #[serde(default)]
     pub shared_depots: BTreeMap<u64, u64>,
 
     /// The SteamID64 of the last Steam user that played this game on the filesystem.
@@ -103,118 +123,30 @@ pub struct App {
     /// This crate supports [steamid-ng](https://docs.rs/steamid-ng) and can automatically convert this to a [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) for you.
     ///
     /// To enable this support, [use the  `steamid_ng` Cargo.toml feature](https://docs.rs/steamlocate/*/steamlocate#using-steamlocate).
+    #[serde(rename = "LastOwner")]
     pub last_user: Option<u64>,
 }
 
 impl App {
-    pub(crate) fn new(library_path: &Path, manifest: &Path) -> Result<Self> {
+    pub(crate) fn new(manifest: &Path) -> Result<Self> {
         let contents = fs::read_to_string(manifest).map_err(|io| Error::io(io, manifest))?;
-        let internal = keyvalues_serde::from_str(&contents).map_err(|err| {
-            Error::parse(ParseErrorKind::App, ParseError::from_serde(err), manifest)
-        })?;
-        let app = Self::from_internal_steam_app(internal, library_path);
-
-        // Check if the installation path exists and is a valid directory
-        // TODO: this one check really shapes a lot of the API (in terms of how the data for the
-        // `App` is resolved. Maybe move this to something like
-        // ```rust
-        // library.resolve_install_dir(&app)?;
-        // ```
-        if app.path.is_dir() {
-            Ok(app)
-        } else {
-            Err(Error::MissingAppInstall {
-                app_id: app.app_id,
-                path: app.path,
-            })
-        }
+        keyvalues_serde::from_str(&contents)
+            .map_err(|err| Error::parse(ParseErrorKind::App, ParseError::from_serde(err), manifest))
     }
+}
 
-    pub(crate) fn from_internal_steam_app(internal: InternalApp, library_path: &Path) -> Self {
-        let InternalApp {
-            app_id,
-            universe,
-            launcher_path,
-            name,
-            state_flags,
-            install_dir,
-            last_updated,
-            update_result,
-            size_on_disk,
-            build_id,
-            last_user,
-            bytes_to_download,
-            bytes_downloaded,
-            bytes_to_stage,
-            bytes_staged,
-            staging_size,
-            target_build_id,
-            auto_update_behavior,
-            allow_other_downloads_while_running,
-            scheduled_auto_update,
-            full_validate_before_next_update,
-            full_validate_after_next_update,
-            installed_depots,
-            staged_depots,
-            user_config,
-            mounted_config,
-            install_scripts,
-            shared_depots,
-        } = internal;
-
-        let path = library_path
-            .join("steamapps")
-            .join("common")
-            .join(install_dir);
-
-        let universe = universe.map(Universe::from);
-        let state_flags = state_flags.map(StateFlags);
-        let last_updated = last_updated.and_then(time_as_secs_from_unix_epoch);
-        let scheduled_auto_update = if scheduled_auto_update == Some(0) {
-            None
-        } else {
-            scheduled_auto_update.and_then(time_as_secs_from_unix_epoch)
-        };
-        let allow_other_downloads_while_running = allow_other_downloads_while_running
-            .map(AllowOtherDownloadsWhileRunning::from)
-            .unwrap_or_default();
-        let auto_update_behavior = auto_update_behavior
-            .map(AutoUpdateBehavior::from)
-            .unwrap_or_default();
-        let full_validate_before_next_update = full_validate_before_next_update.unwrap_or_default();
-        let full_validate_after_next_update = full_validate_after_next_update.unwrap_or_default();
-
-        Self {
-            app_id,
-            universe,
-            launcher_path,
-            name,
-            state_flags,
-            path,
-            last_updated,
-            update_result,
-            size_on_disk,
-            build_id,
-            last_user,
-            bytes_to_download,
-            bytes_downloaded,
-            bytes_to_stage,
-            bytes_staged,
-            staging_size,
-            target_build_id,
-            auto_update_behavior,
-            allow_other_downloads_while_running,
-            scheduled_auto_update,
-            full_validate_before_next_update,
-            full_validate_after_next_update,
-            installed_depots,
-            staged_depots,
-            user_config,
-            mounted_config,
-            install_scripts,
-            shared_depots,
+macro_rules! impl_deserialize_from_u64 {
+    ( $ty_name:ty ) => {
+        impl<'de> Deserialize<'de> for $ty_name {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let value = u64::deserialize(deserializer)?;
+                Ok(Self::from(value))
+            }
         }
-    }
+    };
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -243,7 +175,9 @@ impl From<u64> for Universe {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+impl_deserialize_from_u64!(Universe);
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
 #[cfg_attr(test, derive(serde::Serialize))]
 pub struct StateFlags(pub u64);
 
@@ -391,6 +325,17 @@ impl StateFlag {
     }
 }
 
+fn de_time_as_secs_from_unix_epoch<'de, D>(
+    deserializer: D,
+) -> std::result::Result<Option<time::SystemTime>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let maybe_time =
+        <Option<u64>>::deserialize(deserializer)?.and_then(time_as_secs_from_unix_epoch);
+    Ok(maybe_time)
+}
+
 fn time_as_secs_from_unix_epoch(secs: u64) -> Option<time::SystemTime> {
     let offset = time::Duration::from_secs(secs);
     time::SystemTime::UNIX_EPOCH.checked_add(offset)
@@ -422,6 +367,8 @@ impl Default for AllowOtherDownloadsWhileRunning {
     }
 }
 
+impl_deserialize_from_u64!(AllowOtherDownloadsWhileRunning);
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(test, derive(serde::Serialize))]
 pub enum AutoUpdateBehavior {
@@ -442,9 +389,36 @@ impl From<u64> for AutoUpdateBehavior {
     }
 }
 
+// TODO: Maybe don't have these defaults?
 impl Default for AutoUpdateBehavior {
     fn default() -> Self {
         Self::KeepUpToDate
+    }
+}
+
+impl_deserialize_from_u64!(AutoUpdateBehavior);
+
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(test, derive(serde::Serialize))]
+pub enum ScheduledAutoUpdate {
+    Zero,
+    Time(time::SystemTime),
+}
+
+impl<'de> Deserialize<'de> for ScheduledAutoUpdate {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let sched_auto_upd = match u64::deserialize(deserializer)? {
+            0 => Self::Zero,
+            secs => {
+                let time = time_as_secs_from_unix_epoch(secs)
+                    .ok_or_else(|| serde::de::Error::custom("Exceeded max time"))?;
+                Self::Time(time)
+            }
+        };
+        Ok(sched_auto_upd)
     }
 }
 
@@ -458,87 +432,26 @@ pub struct Depot {
     pub dlc_app_id: Option<u64>,
 }
 
-#[derive(Debug, Deserialize)]
-pub(crate) struct InternalApp {
-    #[serde(rename = "appid")]
-    app_id: u32,
-    #[serde(rename = "installdir")]
-    install_dir: String,
-    #[serde(rename = "Universe")]
-    universe: Option<u64>,
-    #[serde(rename = "LauncherPath")]
-    launcher_path: Option<PathBuf>,
-    name: Option<String>,
-    #[serde(rename = "StateFlags")]
-    state_flags: Option<u64>,
-    #[serde(rename = "LastUpdated")]
-    last_updated: Option<u64>,
-    #[serde(rename = "UpdateResult")]
-    update_result: Option<u64>,
-    #[serde(rename = "SizeOnDisk")]
-    size_on_disk: Option<u64>,
-    #[serde(rename = "buildid")]
-    build_id: Option<u64>,
-    #[serde(rename = "LastOwner")]
-    last_user: Option<u64>,
-    #[serde(rename = "BytesToDownload")]
-    bytes_to_download: Option<u64>,
-    #[serde(rename = "BytesDownloaded")]
-    bytes_downloaded: Option<u64>,
-    #[serde(rename = "BytesToStage")]
-    bytes_to_stage: Option<u64>,
-    #[serde(rename = "BytesStaged")]
-    bytes_staged: Option<u64>,
-    #[serde(rename = "StagingSize")]
-    staging_size: Option<u64>,
-    #[serde(rename = "TargetBuildID")]
-    target_build_id: Option<u64>,
-    #[serde(rename = "AutoUpdateBehavior")]
-    auto_update_behavior: Option<u64>,
-    #[serde(rename = "AllowOtherDownloadsWhileRunning")]
-    allow_other_downloads_while_running: Option<u64>,
-    #[serde(rename = "ScheduledAutoUpdate")]
-    scheduled_auto_update: Option<u64>,
-    #[serde(rename = "FullValidateBeforeNextUpdate")]
-    full_validate_before_next_update: Option<bool>,
-    #[serde(rename = "FullValidateAfterNextUpdate")]
-    full_validate_after_next_update: Option<bool>,
-    #[serde(rename = "InstalledDepots")]
-    installed_depots: BTreeMap<u64, Depot>,
-    #[serde(default, rename = "StagedDepots")]
-    staged_depots: BTreeMap<u64, Depot>,
-    #[serde(default, rename = "SharedDepots")]
-    shared_depots: BTreeMap<u64, u64>,
-    #[serde(rename = "UserConfig")]
-    user_config: BTreeMap<String, String>,
-    #[serde(default, rename = "MountedConfig")]
-    mounted_config: BTreeMap<String, String>,
-    #[serde(default, rename = "InstallScripts")]
-    install_scripts: BTreeMap<u64, PathBuf>,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn app_from_manifest_str(s: &str, library_path: &Path) -> App {
-        let internal: InternalApp = keyvalues_serde::from_str(s).unwrap();
-        App::from_internal_steam_app(internal, library_path)
+    fn app_from_manifest_str(s: &str) -> App {
+        keyvalues_serde::from_str(s).unwrap()
     }
 
     #[test]
     fn sanity() {
         let manifest = include_str!("../tests/assets/appmanifest_230410.acf");
-        let app = app_from_manifest_str(manifest, Path::new("C:\\redact\\me"));
-        // Redact the path because the path separator used is not cross-platform
-        insta::assert_ron_snapshot!(app, { ".path" => "[path]" });
+        let app = app_from_manifest_str(manifest);
+        insta::assert_ron_snapshot!(app);
     }
 
     #[test]
     fn more_sanity() {
         let manifest = include_str!("../tests/assets/appmanifest_599140.acf");
-        let app = app_from_manifest_str(manifest, Path::new("/redact/me"));
-        insta::assert_ron_snapshot!(app, { ".path" => "[path]" });
+        let app = app_from_manifest_str(manifest);
+        insta::assert_ron_snapshot!(app);
     }
 
     #[test]
