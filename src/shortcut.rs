@@ -19,7 +19,7 @@ use crate::{
 #[non_exhaustive]
 pub struct Shortcut {
     /// Steam's provided app id
-    pub appid: u32,
+    pub app_id: u32,
     /// The name of the application
     pub app_name: String,
     /// The executable used to launch the app
@@ -34,7 +34,7 @@ pub struct Shortcut {
 
 impl Shortcut {
     /// Calculates the shortcut's Steam ID from the executable and app name
-    pub fn new(appid: u32, app_name: String, executable: String, start_dir: String) -> Self {
+    pub fn new(app_id: u32, app_name: String, executable: String, start_dir: String) -> Self {
 		fn calculate_steam_id(executable: &[u8], app_name: &[u8]) -> u64 {
 			let algorithm = crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
 
@@ -49,7 +49,7 @@ impl Shortcut {
 		let steam_id = calculate_steam_id(executable.as_bytes(), app_name.as_bytes());
 
 		Self {
-			appid,
+			app_id,
 			app_name,
 			executable,
 			start_dir,
@@ -193,7 +193,7 @@ fn parse_shortcuts(contents: &[u8]) -> Option<Vec<Shortcut>> {
         if !after_many_case_insensitive(&mut it, b"\x02appid\x00") {
             return Some(shortcuts);
         }
-        let appid = parse_value_u32(&mut it)?;
+        let app_id = parse_value_u32(&mut it)?;
 
         if !after_many_case_insensitive(&mut it, b"\x01AppName\x00") {
             return None;
@@ -210,7 +210,7 @@ fn parse_shortcuts(contents: &[u8]) -> Option<Vec<Shortcut>> {
         }
         let start_dir = parse_value_str(&mut it)?;
 
-        let shortcut = Shortcut::new(appid, app_name, executable, start_dir);
+        let shortcut = Shortcut::new(app_id, app_name, executable, start_dir);
         shortcuts.push(shortcut);
     }
 }
@@ -227,21 +227,21 @@ mod tests {
             shortcuts,
             vec![
                 Shortcut {
-                    appid: 2786274309,
+                    app_id: 2786274309,
                     app_name: "Anki".into(),
                     executable: "\"anki\"".into(),
                     start_dir: "\"./\"".into(),
 			steam_id: 0xe89614fe02000000,
                 },
                 Shortcut {
-                    appid: 2492174738,
+                    app_id: 2492174738,
                     app_name: "LibreOffice Calc".into(),
                     executable: "\"libreoffice\"".into(),
                     start_dir: "\"./\"".into(),
 			steam_id: 0xdb01c79902000000,
                 },
                 Shortcut {
-                    appid: 3703025501,
+                    app_id: 3703025501,
                     app_name: "foo.sh".into(),
                     executable: "\"/usr/local/bin/foo.sh\"".into(),
                     start_dir: "\"/usr/local/bin/\"".into(),
@@ -255,7 +255,7 @@ mod tests {
         assert_eq!(
             shortcuts,
             vec![Shortcut {
-                appid: 2931025216,
+                app_id: 2931025216,
                 app_name: "Second Life".into(),
                 executable: "\"/Applications/Second Life Viewer.app\"".into(),
                 start_dir: "\"/Applications/\"".into(),
