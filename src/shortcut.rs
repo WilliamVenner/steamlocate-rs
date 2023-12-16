@@ -1,4 +1,4 @@
-//! **WARN:** This is all hacky and should be replaced with proper binary VDF parsing
+// HACK: This is all hacky and should be replaced with proper binary VDF parsing
 
 use std::{
     fs, io,
