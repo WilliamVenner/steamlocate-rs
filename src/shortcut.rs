@@ -28,20 +28,33 @@ pub struct Shortcut {
     pub executable: String,
     /// The directory that the application should be run in
     pub start_dir: String,
+	/// The shortcut's Steam ID calculated from the executable path and app name
+	pub steam_id: u64,
 }
 
-#[cfg(feature = "shortcuts_extras")]
 impl Shortcut {
     /// Calculates the shortcut's Steam ID from the executable and app name
-    pub fn steam_id(&self) -> u64 {
-        let algorithm = crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
+    pub fn new(appid: u32, app_name: String, executable: String, start_dir: String) -> Self {
+		fn calculate_steam_id(executable: &[u8], app_name: &[u8]) -> u64 {
+			let algorithm = crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
 
-        let mut digest = algorithm.digest();
-        digest.update(self.executable.as_bytes());
-        digest.update(self.app_name.as_bytes());
+			let mut digest = algorithm.digest();
+			digest.update(executable);
+			digest.update(app_name);
 
-        let top = digest.finalize() | 0x80000000;
-        ((top as u64) << 32) | 0x02000000
+			let top = digest.finalize() | 0x80000000;
+			((top as u64) << 32) | 0x02000000
+		}
+
+		let steam_id = calculate_steam_id(executable.as_bytes(), app_name.as_bytes());
+
+		Self {
+			appid,
+			app_name,
+			executable,
+			start_dir,
+			steam_id,
+		}
     }
 }
 
@@ -197,12 +210,7 @@ fn parse_shortcuts(contents: &[u8]) -> Option<Vec<Shortcut>> {
         }
         let start_dir = parse_value_str(&mut it)?;
 
-        let shortcut = Shortcut {
-            appid,
-            app_name,
-            executable,
-            start_dir,
-        };
+        let shortcut = Shortcut::new(appid, app_name, executable, start_dir);
         shortcuts.push(shortcut);
     }
 }
@@ -223,18 +231,21 @@ mod tests {
                     app_name: "Anki".into(),
                     executable: "\"anki\"".into(),
                     start_dir: "\"./\"".into(),
+			steam_id: 0xe89614fe02000000,
                 },
                 Shortcut {
                     appid: 2492174738,
                     app_name: "LibreOffice Calc".into(),
                     executable: "\"libreoffice\"".into(),
                     start_dir: "\"./\"".into(),
+			steam_id: 0xdb01c79902000000,
                 },
                 Shortcut {
                     appid: 3703025501,
                     app_name: "foo.sh".into(),
                     executable: "\"/usr/local/bin/foo.sh\"".into(),
                     start_dir: "\"/usr/local/bin/\"".into(),
+			steam_id: 0x9d55017302000000,
                 }
             ],
         );
@@ -248,26 +259,8 @@ mod tests {
                 app_name: "Second Life".into(),
                 executable: "\"/Applications/Second Life Viewer.app\"".into(),
                 start_dir: "\"/Applications/\"".into(),
+				steam_id: 0xfdd972df02000000,
             }]
         );
-    }
-
-    #[cfg_attr(
-        not(feature = "shortcuts_extras"),
-        ignore = "Needs `shortcuts_extras` feature"
-    )]
-    #[test]
-    fn shortcuts_extras() {
-        #[cfg(not(feature = "shortcuts_extras"))]
-        unreachable!();
-        #[cfg(feature = "shortcuts_extras")]
-        {
-            let contents = include_bytes!("../tests/sample_data/shortcuts.vdf");
-            let shortcuts = parse_shortcuts(contents).unwrap();
-            let ideal_ids = vec![0xe89614fe02000000, 0xdb01c79902000000, 0x9d55017302000000];
-            for (id, shortcut) in ideal_ids.into_iter().zip(shortcuts.iter()) {
-                assert_eq!(id, shortcut.steam_id());
-            }
-        }
     }
 }
