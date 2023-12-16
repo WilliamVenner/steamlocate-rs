@@ -3,8 +3,11 @@ use std::convert::TryInto;
 // TODO: steamlocate_tempfile cfg for docs. Otherwise rely on a env var to get passed in
 
 use crate::{
-	Error,
-	tests::{TestError, TestResult, helpers::{SampleApp, TempSteamDir, expect_test_env}},
+    tests::{
+        helpers::{expect_test_env, SampleApp, TempSteamDir},
+        TestError, TestResult,
+    },
+    Error,
 };
 
 static GMOD_ID: u32 = SampleApp::GarrysMod.id();

@@ -20,7 +20,8 @@ pub fn expect_test_env() -> TempSteamDir {
     TempSteamDir::builder()
         .app(SampleApp::GarrysMod.into())
         .library(SampleApp::GraveyardKeeper.try_into().unwrap())
-        .finish().unwrap()
+        .finish()
+        .unwrap()
 }
 
 // TODO(cosmic): Add in functionality for providing shortcuts too
