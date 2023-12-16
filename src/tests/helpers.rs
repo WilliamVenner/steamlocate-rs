@@ -96,7 +96,7 @@ impl TempSteamDirBuilder {
             .collect();
 
         Ok(TempSteamDir {
-            steam_dir: SteamDir::from_steam_dir(&steam_dir)?,
+            steam_dir: SteamDir::from_dir(&steam_dir)?,
             _tmps: tmps,
         })
     }

@@ -122,7 +122,7 @@ pub use crate::shortcut::Shortcut;
 
 /// The entrypoint into most of the rest of the API
 ///
-/// Use either [`SteamDir::locate()`] or [`SteamDir::from_steam_dir()`] to create a new instance.
+/// Use either [`SteamDir::locate()`] or [`SteamDir::from_dir()`] to create a new instance.
 /// From there you have access to:
 ///
 /// - The Steam installation directory
@@ -219,7 +219,7 @@ impl SteamDir {
     }
 
     // TODO: rename to `from_dir()` and make consitent with similar constructors on other structs
-    pub fn from_steam_dir(path: &Path) -> Result<SteamDir> {
+    pub fn from_dir(path: &Path) -> Result<SteamDir> {
         if !path.is_dir() {
             return Err(Error::validation(ValidationError::missing_dir()));
         }
@@ -236,6 +236,6 @@ impl SteamDir {
     pub fn locate() -> Result<SteamDir> {
         let path = locate::locate_steam_dir()?;
 
-        Self::from_steam_dir(&path)
+        Self::from_dir(&path)
     }
 }
