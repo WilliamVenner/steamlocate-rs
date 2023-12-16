@@ -154,6 +154,24 @@ impl Library {
         app::Iter::new(self)
     }
 
+    /// Resolves the theoretical installation directory for the given `app`
+    ///
+    /// This is an unvalidated path, so it's up to you to call this with an `app` that's in this
+    /// library
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use std::path::Path;
+    /// # let temp_steam_dir = steamlocate::tests::helpers::expect_test_env();
+    /// # let steam_dir = temp_steam_dir.steam_dir();
+    /// const GRAVEYARD_KEEPER: u32 = 599_140;
+    /// let (graveyard_keeper, library) = steam_dir.find_app(GRAVEYARD_KEEPER)?.unwrap();
+    /// let app_dir = library.resolve_app_dir(&graveyard_keeper);
+    /// let expected_rel_path = Path::new("steamapps").join("common").join("Graveyard Keeper");
+    /// assert!(app_dir.ends_with(expected_rel_path));
+    /// # Ok::<_, steamlocate::tests::TestError>(())
+    /// ```
     pub fn resolve_app_dir(&self, app: &App) -> PathBuf {
         self.path
             .join("steamapps")
