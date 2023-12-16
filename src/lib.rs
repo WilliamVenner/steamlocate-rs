@@ -24,7 +24,7 @@
 //! The [`SteamDir`] is going to be your entrypoint into _most_ parts of the API. After you locate
 //! it you can access related information.
 //!
-//! ```rust
+//! ```
 //! # /*
 //! let steam_dir = steamlocate::SteamDir::locate()?;
 //! # */
@@ -34,7 +34,9 @@
 //! // ^^ prints something like `Steam installation - C:\Program Files (x86)\Steam`
 //!
 //! const GMOD_APP_ID: u32 = 4_000;
-//! let (garrys_mod, _lib) = steam_dir.find_app(GMOD_APP_ID)?.expect("Of course we have G Mod");
+//! let (garrys_mod, _lib) = steam_dir
+//!     .find_app(GMOD_APP_ID)?
+//!     .expect("Of course we have G Mod");
 //! assert_eq!(garrys_mod.name.as_ref().unwrap(), "Garry's Mod");
 //! println!("{garrys_mod:#?}");
 //! // ^^ prints something like vv
@@ -120,9 +122,14 @@ pub use crate::error::{Error, Result};
 pub use crate::library::Library;
 pub use crate::shortcut::Shortcut;
 
+// Run doctests on the README too
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+pub struct ReadmeDoctests;
+
 /// The entrypoint into most of the rest of the API
 ///
-/// Use either [`SteamDir::locate()`] or [`SteamDir::from_steam_dir()`] to create a new instance.
+/// Use either [`SteamDir::locate()`] or [`SteamDir::from_dir()`] to create a new instance.
 /// From there you have access to:
 ///
 /// - The Steam installation directory
@@ -219,7 +226,7 @@ impl SteamDir {
     }
 
     // TODO: rename to `from_dir()` and make consitent with similar constructors on other structs
-    pub fn from_steam_dir(path: &Path) -> Result<SteamDir> {
+    pub fn from_dir(path: &Path) -> Result<SteamDir> {
         if !path.is_dir() {
             return Err(Error::validation(ValidationError::missing_dir()));
         }
@@ -236,6 +243,6 @@ impl SteamDir {
     pub fn locate() -> Result<SteamDir> {
         let path = locate::locate_steam_dir()?;
 
-        Self::from_steam_dir(&path)
+        Self::from_dir(&path)
     }
 }
