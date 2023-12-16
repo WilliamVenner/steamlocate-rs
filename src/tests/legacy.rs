@@ -1,5 +1,3 @@
-// TODO: steamlocate_tempfile cfg for docs. Otherwise rely on a env var to get passed in
-
 use crate::{
     tests::{
         helpers::{expect_test_env, SampleApp},

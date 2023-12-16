@@ -1,6 +1,6 @@
 [package]
 name = "steamlocate"
-version = "2.0.0-beta.0"
+version = "2.0.0-beta.1"
 authors = ["William Venner <william@venner.io>"]
 edition = "2018"
 repository = "https://github.com/WilliamVenner/steamlocate-rs"
@@ -12,7 +12,7 @@ categories = ["os", "hardware-support", "filesystem", "accessibility"]
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs", "--cfg", "steamlocate_doctest"]
+rustdoc-args = ["--cfg", "docsrs"]
 
 # TODO: test more features in CI
 
@@ -26,10 +26,6 @@ keyvalues-parser = "0.2"
 keyvalues-serde = "0.2"
 serde = { version = "1.0.0", features = ["derive"] }
 
-# Custom cfg used to enable a dependency only needed for doctests
-[target."cfg(steamlocate_doctest)".dependencies]
-tempfile = "3.8.1"
-
 # Platform-specific dependencies used for locating the steam dir
 [target."cfg(target_os=\"windows\")".dependencies]
 locate_backend = { package = "winreg", version = "0.51", optional = true }
@@ -38,4 +34,3 @@ locate_backend = { package = "dirs", version = "5", optional = true }
 
 [dev-dependencies]
 insta = { version = "1.34.0", features = ["ron"] }
-tempfile = "3.8.1"
