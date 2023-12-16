@@ -1,38 +1,40 @@
-#[cfg(not(any(steamlocate_doctest, test)))]
-pub use fake::TempDir;
-#[cfg(any(steamlocate_doctest, test))]
-pub use real::TempDir;
+//! `TempDir` at home
+//!
+//! I want to use temporary directories in doctests, but that works against your public API.
+//! Luckily all the functionality we need is very easy to replicate
 
-#[cfg(not(any(steamlocate_doctest, test)))]
-mod fake {
-    pub struct TempDir;
+use std::{collections, env, fs, hash, path};
 
-    impl TempDir {
-        // TODO: I think that this can be added to a `.cargo` config file for this project?
-        pub fn new() -> Result<TempDir, crate::tests::TestError> {
-            unimplemented!("Pass RUSTFLAGS='--cfg steamlocate_doctest' to run doctests");
-        }
+use crate::tests::TestError;
 
-        pub fn path(&self) -> &std::path::Path {
-            panic!();
+#[derive(Debug)]
+pub struct TempDir(Option<path::PathBuf>);
+
+impl TempDir {
+    pub fn new() -> Result<Self, TestError> {
+        let mut dir = env::temp_dir();
+        let random_name = format!("steamlocate-test-{:x}", random_seed());
+        dir.push(random_name);
+        // TODO: could retry on failure
+        fs::create_dir_all(&dir)?;
+        Ok(Self(Some(dir)))
+    }
+
+    pub fn path(&self) -> &path::Path {
+        self.0.as_deref().unwrap()
+    }
+}
+
+impl Drop for TempDir {
+    fn drop(&mut self) {
+        if let Some(path) = self.0.take() {
+            let _ = fs::remove_dir_all(path);
         }
     }
 }
 
-#[cfg(any(steamlocate_doctest, test))]
-mod real {
-    pub struct TempDir(tempfile::TempDir);
-
-    impl TempDir {
-        pub fn new() -> Result<Self, crate::tests::TestError> {
-            let temp_dir = tempfile::Builder::new()
-                .prefix("steamlocate-test-")
-                .tempdir()?;
-            Ok(Self(temp_dir))
-        }
-
-        pub fn path(&self) -> &std::path::Path {
-            self.0.path()
-        }
-    }
+fn random_seed() -> u64 {
+    hash::Hasher::finish(&hash::BuildHasher::build_hasher(
+        &collections::hash_map::RandomState::new(),
+    ))
 }
