@@ -51,8 +51,8 @@ pub struct App {
     pub app_id: u32,
     /// The name of the installation directory of this Steam app e.g. `"GarrysMod"`
     ///
-	/// If you're trying to get the app's installation directory then take a look at
-	/// [`Library::resolve_app_dir()`][crate::Library::resolve_app_dir]
+    /// If you're trying to get the app's installation directory then take a look at
+    /// [`Library::resolve_app_dir()`][crate::Library::resolve_app_dir]
     #[serde(rename = "installdir")]
     pub install_dir: String,
     /// The store name of the Steam app

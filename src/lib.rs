@@ -174,15 +174,15 @@ impl SteamDir {
     /// # Example
     /// ```
     /// # let temp_steam_dir = steamlocate::tests::helpers::expect_test_env();
-	/// # let steam_dir = temp_steam_dir.steam_dir();
-	/// # /*
-	/// let steam_dir = SteamDir::locate()?;
-	/// # */
-	/// const WARFRAME: u32 = 230_410;
+    /// # let steam_dir = temp_steam_dir.steam_dir();
+    /// # /*
+    /// let steam_dir = SteamDir::locate()?;
+    /// # */
+    /// const WARFRAME: u32 = 230_410;
     /// let (warframe, library) = steam_dir.find_app(WARFRAME)?.unwrap();
     /// assert_eq!(warframe.app_id, WARFRAME);
-	/// assert!(library.app_ids().contains(&warframe.app_id));
-	/// # Ok::<_, steamlocate::tests::TestError>(())
+    /// assert!(library.app_ids().contains(&warframe.app_id));
+    /// # Ok::<_, steamlocate::tests::TestError>(())
     /// ```
     pub fn find_app(&self, app_id: u32) -> Result<Option<(App, Library)>> {
         // Search for the `app_id` in each library
@@ -190,7 +190,10 @@ impl SteamDir {
             Err(e) => Err(e),
             Ok(libraries) => libraries
                 .filter_map(|library| library.ok())
-                .find_map(|lib| lib.app(app_id).map(|maybe_app| maybe_app.map(|app| (app, lib))))
+                .find_map(|lib| {
+                    lib.app(app_id)
+                        .map(|maybe_app| maybe_app.map(|app| (app, lib)))
+                })
                 .transpose(),
         }
     }
@@ -215,7 +218,7 @@ impl SteamDir {
         shortcut::Iter::new(&self.path)
     }
 
-	// TODO: rename to `from_dir()` and make consitent with similar constructors on other structs
+    // TODO: rename to `from_dir()` and make consitent with similar constructors on other structs
     pub fn from_steam_dir(path: &Path) -> Result<SteamDir> {
         if !path.is_dir() {
             return Err(Error::validation(ValidationError::missing_dir()));

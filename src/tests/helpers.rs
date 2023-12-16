@@ -19,7 +19,7 @@ use serde::Serialize;
 pub fn expect_test_env() -> TempSteamDir {
     TempSteamDir::builder()
         .app(SampleApp::GarrysMod.into())
-		.app(SampleApp::Warframe.into())
+        .app(SampleApp::Warframe.into())
         .library(SampleApp::GraveyardKeeper.try_into().unwrap())
         .finish()
         .unwrap()
@@ -258,7 +258,7 @@ impl AppFile {
 pub enum SampleApp {
     GarrysMod,
     GraveyardKeeper,
-	Warframe,
+    Warframe,
 }
 
 impl SampleApp {
@@ -286,11 +286,11 @@ impl SampleApp {
                 "Graveyard Keeper",
                 include_str!("../../tests/assets/appmanifest_599140.acf"),
             ),
-			Self::Warframe => (
-				230_410,
-				"Warframe",
-				include_str!("../../tests/assets/appmanifest_230410.acf"),
-			),
+            Self::Warframe => (
+                230_410,
+                "Warframe",
+                include_str!("../../tests/assets/appmanifest_230410.acf"),
+            ),
         }
     }
 }
@@ -304,7 +304,10 @@ mod test {
     fn sanity() -> TestResult {
         let tmp_steam_dir = TempSteamDir::try_from(SampleApp::GarrysMod)?;
         let steam_dir = tmp_steam_dir.steam_dir();
-        assert!(steam_dir.find_app(SampleApp::GarrysMod.id()).unwrap().is_some());
+        assert!(steam_dir
+            .find_app(SampleApp::GarrysMod.id())
+            .unwrap()
+            .is_some());
 
         Ok(())
     }
