@@ -40,47 +40,27 @@ impl<'library> Iterator for Iter<'library> {
     }
 }
 
-/// An instance of an installed Steam app.
-/// # Example
-/// ```ignore
-/// # use steamlocate::SteamDir;
-/// let mut steamdir = SteamDir::locate().unwrap();
-/// let gmod = steamdir.app(&4000);
-/// println!("{:#?}", gmod.unwrap());
-/// ```
-/// ```ignore
-/// App (
-///     appid: u32: 4000,
-///     path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-///     vdf: <steamy_vdf::Table>,
-///     name: Some(String: "Garry's Mod"),
-///     last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
-/// )
-/// ```
+/// Metadata for an installed Steam app
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[cfg_attr(test, derive(serde::Serialize))]
 #[non_exhaustive]
 #[serde(rename_all = "PascalCase")]
 pub struct App {
-    /// The app ID of this Steam app.
+    /// The app ID of this Steam app
     #[serde(rename = "appid")]
     pub app_id: u32,
-
-    /// The name of the installation directory of this Steam app.
+    /// The name of the installation directory of this Steam app e.g. `"GarrysMod"`
     ///
-    /// Example: `"GarrysMod"`
-    ///
-    /// This can be resolved to the actual path off of the library
-    ///
-    /// ```rust,ignore
-    /// let app_dir = library.resolve_app_dir(&app);
-    /// ```
+	/// If you're trying to get the app's installation directory then take a look at
+	/// [`Library::resolve_app_dir()`][crate::Library::resolve_app_dir]
     #[serde(rename = "installdir")]
     pub install_dir: String,
-
-    /// The store name of the Steam app.
+    /// The store name of the Steam app
     #[serde(rename = "name")]
     pub name: Option<String>,
+    /// The SteamID64 of the last Steam user that played this game on the filesystem
+    #[serde(rename = "LastOwner")]
+    pub last_user: Option<u64>,
 
     pub universe: Option<Universe>,
     pub launcher_path: Option<PathBuf>,
@@ -117,14 +97,6 @@ pub struct App {
     pub install_scripts: BTreeMap<u64, PathBuf>,
     #[serde(default)]
     pub shared_depots: BTreeMap<u64, u64>,
-
-    /// The SteamID64 of the last Steam user that played this game on the filesystem.
-    ///
-    /// This crate supports [steamid-ng](https://docs.rs/steamid-ng) and can automatically convert this to a [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) for you.
-    ///
-    /// To enable this support, [use the  `steamid_ng` Cargo.toml feature](https://docs.rs/steamlocate/*/steamlocate#using-steamlocate).
-    #[serde(rename = "LastOwner")]
-    pub last_user: Option<u64>,
 }
 
 impl App {

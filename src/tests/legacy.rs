@@ -1,11 +1,9 @@
-use std::convert::TryInto;
-
 // TODO: steamlocate_tempfile cfg for docs. Otherwise rely on a env var to get passed in
 
 use crate::{
     tests::{
-        helpers::{expect_test_env, SampleApp, TempSteamDir},
-        TestError, TestResult,
+        helpers::{expect_test_env, SampleApp},
+        TestResult,
     },
     Error,
 };
@@ -24,8 +22,8 @@ fn find_library_folders() -> TestResult {
 fn find_app() -> TestResult {
     let tmp_steam_dir = expect_test_env();
     let steam_dir = tmp_steam_dir.steam_dir();
-    let steam_app = steam_dir.app(GMOD_ID).unwrap();
-    assert_eq!(steam_app.unwrap().app_id, GMOD_ID);
+    let steam_app = steam_dir.find_app(GMOD_ID).unwrap();
+    assert_eq!(steam_app.unwrap().0.app_id, GMOD_ID);
     Ok(())
 }
 
@@ -33,8 +31,8 @@ fn find_app() -> TestResult {
 fn app_details() -> TestResult {
     let tmp_steam_dir = expect_test_env();
     let steam_dir = tmp_steam_dir.steam_dir();
-    let steam_app = steam_dir.app(GMOD_ID)?.unwrap();
-    assert_eq!(steam_app.name.unwrap(), "Garry's Mod");
+    let steam_app = steam_dir.find_app(GMOD_ID)?.unwrap();
+    assert_eq!(steam_app.0.name.unwrap(), "Garry's Mod");
     Ok(())
 }
 
@@ -76,13 +74,13 @@ fn all_apps_get_one() -> TestResult {
     assert!(!all_apps.is_empty());
     assert!(all_apps.len() > 1);
 
-    let steam_app = steam_dir.app(GMOD_ID).unwrap().unwrap();
+    let steam_app = steam_dir.find_app(GMOD_ID).unwrap().unwrap();
     assert_eq!(
         all_apps
             .into_iter()
             .find(|app| app.app_id == GMOD_ID)
             .unwrap(),
-        steam_app
+        steam_app.0,
     );
 
     Ok(())

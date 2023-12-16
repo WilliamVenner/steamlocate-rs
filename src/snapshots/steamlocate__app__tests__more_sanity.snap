@@ -6,6 +6,7 @@ App(
   appid: 599140,
   installdir: "Graveyard Keeper",
   name: Some("Graveyard Keeper"),
+  LastOwner: Some(12312312312312312),
   Universe: Some(Public),
   LauncherPath: None,
   StateFlags: Some(StateFlags(6)),
@@ -46,5 +47,4 @@ App(
   },
   InstallScripts: {},
   SharedDepots: {},
-  LastOwner: Some(12312312312312312),
 )

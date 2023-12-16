@@ -3,7 +3,7 @@
 //! # Using steamlocate
 //!
 //! Simply add `steamlocate` using
-//! [`cargo`](https://doc.rust-lang.org/cargo/getting-started/installation.html)
+//! [`cargo`](https://doc.rust-lang.org/cargo/getting-started/installation.html).
 //!
 //! ```console
 //! $ cargo add steamlocate
@@ -34,7 +34,7 @@
 //! // ^^ prints something like `Steam installation - C:\Program Files (x86)\Steam`
 //!
 //! const GMOD_APP_ID: u32 = 4_000;
-//! let garrys_mod = steam_dir.app(GMOD_APP_ID)?.expect("Of course we have G Mod");
+//! let (garrys_mod, _lib) = steam_dir.find_app(GMOD_APP_ID)?.expect("Of course we have G Mod");
 //! assert_eq!(garrys_mod.name.as_ref().unwrap(), "Garry's Mod");
 //! println!("{garrys_mod:#?}");
 //! // ^^ prints something like vv
@@ -68,11 +68,7 @@
 //!
 //!     for app in library.apps() {
 //!         let app = app?;
-//!         println!(
-//!             "    App {} - {}",
-//!             app.app_id,
-//!             app.name.as_deref().unwrap_or("<no_name>")
-//!         );
+//!         println!("    App {} - {:?}", app.app_id, app.name);
 //!     }
 //! }
 //! # Ok::<_, steamlocate::tests::TestError>(())
@@ -81,15 +77,14 @@
 //! On my laptop this prints
 //!
 //! ```text
-//! Steam Dir - "/home/wintermute/.steam/steam"
-//!    Library - /home/wintermute/.local/share/Steam
-//!        App 1628350 - Steam Linux Runtime 3.0 (sniper)
-//!        App 1493710 - Proton Experimental
-//!        App 4000 - Garry's Mod
-//!    Library - /home/wintermute/temp steam lib
-//!        App 391540 - Undertale
-//!        App 1714040 - Super Auto Pets
-//!        App 2348590 - Proton 8.0
+//! Library - /home/wintermute/.local/share/Steam
+//!     App 1628350 - Steam Linux Runtime 3.0 (sniper)
+//!     App 1493710 - Proton Experimental
+//!     App 4000 - Garry's Mod
+//! Library - /home/wintermute/temp steam lib
+//!     App 391540 - Undertale
+//!     App 1714040 - Super Auto Pets
+//!     App 2348590 - Proton 8.0
 //! ```
 
 #![warn(
@@ -107,9 +102,9 @@ pub mod library;
 mod locate;
 pub mod shortcut;
 // NOTE: exposed publicly, so that we can use them in doctests
-/// Not part of the public API
+/// Not part of the public API >:V
 #[doc(hidden)]
-pub mod tests; // TODO: rename this if it's gonna be part of the public API
+pub mod tests; // TODO: rename this since it may leak out in compiler error messages
 
 use std::collections::HashMap;
 use std::fs;
@@ -125,22 +120,31 @@ pub use crate::error::{Error, Result};
 pub use crate::library::Library;
 pub use crate::shortcut::Shortcut;
 
-/// An instance of a Steam installation.
+/// The entrypoint into most of the rest of the API
 ///
-/// All functions of this struct will cache their results.
+/// Use either [`SteamDir::locate()`] or [`SteamDir::from_steam_dir()`] to create a new instance.
+/// From there you have access to:
 ///
-/// If you'd like to dispose of the cache or get uncached results, just instantiate a new `SteamDir`.
+/// - The Steam installation directory
+///   - [`steam_dir.path()`][SteamDir::path]
+/// - Library info
+///   - [`steam_dir.library_paths()`][SteamDir::library_paths]
+///   - [`steam_dir.libraries()`][SteamDir::libraries]
+/// - Convenient access to find a specific app by id
+///   - [`steam_dir.find_app(app_id)`][SteamDir::find_app]
+/// - Compatibility tool mapping (aka Proton to game mapping)
+///   - [`steam_dir.compat_tool_mapping()`][SteamDir::compat_tool_mapping]
+/// - Shortcuts info (aka the listing of non-Steam games)
+///   - [`steam_dir.shortcuts()`][SteamDir::shortcuts]
 ///
 /// # Example
-/// ```rust,ignore
-/// # use steamlocate::SteamDir;
-/// let steamdir = SteamDir::locate();
-/// println!("{:#?}", steamdir.unwrap());
 /// ```
-/// ```ignore
-/// SteamDir (
-///     path: "C:\\Program Files (x86)\\Steam"
-/// )
+/// # /*
+/// let steam_dir = SteamDir::locate()?;
+/// # */
+/// # let temp_steam_dir = steamlocate::tests::helpers::expect_test_env();
+/// # let steam_dir = temp_steam_dir.steam_dir();
+/// assert!(steam_dir.path().ends_with("Steam"));
 /// ```
 #[derive(Clone, Debug)]
 pub struct SteamDir {
@@ -165,35 +169,28 @@ impl SteamDir {
         Ok(library::Iter::new(paths))
     }
 
-    /// Returns a `Some` reference to a `App` via its app ID.
-    ///
-    /// If the Steam app is not installed on the system, this will return `None`.
-    ///
-    /// This function will cache its (either `Some` and `None`) result and will always return a reference to the same `App`.
+    /// Convenient helper to look through all the libraries for a specific app
     ///
     /// # Example
-    /// ```ignore
-    /// # use steamlocate::SteamDir;
-    /// let mut steamdir = SteamDir::locate().unwrap();
-    /// let gmod = steamdir.app(&4000);
-    /// println!("{:#?}", gmod.unwrap());
     /// ```
-    /// ```ignore
-    /// App (
-    ///     appid: u32: 4000,
-    ///     path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-    ///     vdf: <steamy_vdf::Table>,
-    ///     name: Some(String: "Garry's Mod"),
-    ///     last_user: Some(u64: 76561198040894045) // This will be a steamid_ng::SteamID if the "steamid_ng" feature is enabled
-    /// )
+    /// # let temp_steam_dir = steamlocate::tests::helpers::expect_test_env();
+	/// # let steam_dir = temp_steam_dir.steam_dir();
+	/// # /*
+	/// let steam_dir = SteamDir::locate()?;
+	/// # */
+	/// const WARFRAME: u32 = 230_410;
+    /// let (warframe, library) = steam_dir.find_app(WARFRAME)?.unwrap();
+    /// assert_eq!(warframe.app_id, WARFRAME);
+	/// assert!(library.app_ids().contains(&warframe.app_id));
+	/// # Ok::<_, steamlocate::tests::TestError>(())
     /// ```
-    pub fn app(&self, app_id: u32) -> Result<Option<App>> {
+    pub fn find_app(&self, app_id: u32) -> Result<Option<(App, Library)>> {
         // Search for the `app_id` in each library
         match self.libraries() {
             Err(e) => Err(e),
             Ok(libraries) => libraries
                 .filter_map(|library| library.ok())
-                .find_map(|lib| lib.app(app_id))
+                .find_map(|lib| lib.app(app_id).map(|maybe_app| maybe_app.map(|app| (app, lib))))
                 .transpose(),
         }
     }
@@ -213,11 +210,12 @@ impl SteamDir {
         Ok(store.software.valve.steam.mapping)
     }
 
-    /// Returns a listing of all added non-Steam games
+    /// Returns an iterator of all non-Steam games that were added to steam
     pub fn shortcuts(&mut self) -> Result<shortcut::Iter> {
         shortcut::Iter::new(&self.path)
     }
 
+	// TODO: rename to `from_dir()` and make consitent with similar constructors on other structs
     pub fn from_steam_dir(path: &Path) -> Result<SteamDir> {
         if !path.is_dir() {
             return Err(Error::validation(ValidationError::missing_dir()));
@@ -230,9 +228,7 @@ impl SteamDir {
         })
     }
 
-    /// Locates the Steam installation directory on the filesystem and initializes a `SteamDir` (Windows)
-    ///
-    /// Returns `None` if no Steam installation can be located.
+    /// Attempts to locate the Steam installation directory on the system
     #[cfg(feature = "locate")]
     pub fn locate() -> Result<SteamDir> {
         let path = locate::locate_steam_dir()?;

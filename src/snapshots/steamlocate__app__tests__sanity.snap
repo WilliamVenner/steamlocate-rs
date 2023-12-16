@@ -6,6 +6,7 @@ App(
   appid: 230410,
   installdir: "Warframe",
   name: Some("Warframe"),
+  LastOwner: Some(12312312312312312),
   Universe: Some(Public),
   LauncherPath: Some("C:\\Program Files (x86)\\Steam\\steam.exe"),
   StateFlags: Some(StateFlags(4)),
@@ -43,5 +44,4 @@ App(
     230411: "installscript.vdf",
   },
   SharedDepots: {},
-  LastOwner: Some(12312312312312312),
 )
