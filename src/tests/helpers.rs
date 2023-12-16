@@ -9,20 +9,19 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::SteamDir;
+use crate::{
+    tests::{temp::TempDir, TestError},
+    SteamDir,
+};
 
 use serde::Serialize;
-use tempfile::TempDir;
 
-fn test_temp_dir() -> Result<TempDir, TestError> {
-    let temp_dir = tempfile::Builder::new()
-        .prefix("steamlocate-test-")
-        .tempdir()?;
-    Ok(temp_dir)
+pub fn expect_test_env() -> TempSteamDir {
+    TempSteamDir::builder()
+        .app(SampleApp::GarrysMod.into())
+        .library(SampleApp::GraveyardKeeper.try_into().unwrap())
+        .finish().unwrap()
 }
-
-pub type TestError = Box<dyn std::error::Error>;
-pub type TestResult = Result<(), TestError>;
 
 // TODO(cosmic): Add in functionality for providing shortcuts too
 pub struct TempSteamDir {
@@ -76,7 +75,7 @@ impl TempSteamDirBuilder {
 
     // Steam dir is also a library, but is laid out slightly differently than a regular library
     pub fn finish(self) -> Result<TempSteamDir, TestError> {
-        let tmp = test_temp_dir()?;
+        let tmp = TempDir::new()?;
         let root_dir = tmp.path().join("test-steam-dir");
         let steam_dir = root_dir.join("Steam");
         let apps_dir = steam_dir.join("steamapps");
@@ -209,7 +208,7 @@ impl TempLibraryBuilder {
     }
 
     fn finish(self) -> Result<TempLibrary, TestError> {
-        let tmp = test_temp_dir()?;
+        let tmp = TempDir::new()?;
         let root_dir = tmp.path().join("test-library");
         let apps_dir = root_dir.join("steamapps");
         fs::create_dir_all(&apps_dir)?;
@@ -288,11 +287,17 @@ impl SampleApp {
     }
 }
 
-#[test]
-fn sanity() -> TestResult {
-    let tmp_steam_dir = TempSteamDir::try_from(SampleApp::GarrysMod)?;
-    let steam_dir = tmp_steam_dir.steam_dir();
-    assert!(steam_dir.app(SampleApp::GarrysMod.id()).unwrap().is_some());
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::tests::TestResult;
 
-    Ok(())
+    #[test]
+    fn sanity() -> TestResult {
+        let tmp_steam_dir = TempSteamDir::try_from(SampleApp::GarrysMod)?;
+        let steam_dir = tmp_steam_dir.steam_dir();
+        assert!(steam_dir.app(SampleApp::GarrysMod.id()).unwrap().is_some());
+
+        Ok(())
+    }
 }

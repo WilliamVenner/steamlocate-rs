@@ -32,44 +32,37 @@
 //! # Examples
 //!
 //! ### Locate the installed Steam directory
-//! ```rust,ignore
-//! extern crate steamlocate;
+//!
+//! ```rust
 //! use steamlocate::SteamDir;
 //!
-//! match SteamDir::locate() {
-//!     Ok(steamdir) => println!("{:#?}", steamdir),
-//!     Err(_) => panic!("Couldn't locate Steam on this computer!")
-//! }
-//! ```
-//! ```ignore
-//! SteamDir (
-//!     path: PathBuf: "C:\\Program Files (x86)\\Steam"
-//! )
-//! ```
+//! # /*
+//! let steam_dir = steamlocate::SteamDir::locate()?;
+//! # */
+//! # let temp_steam_dir = steamlocate::tests::helpers::expect_test_env();
+//! # let steam_dir = temp_steam_dir.steam_dir();
+//! println!("Steam installation - {}", steam_dir.path().display());
+//! // ^^ prints something like `C:\Program Files (x86)\Steam`
 //!
-//! ### Locate an installed Steam app by its app ID
-//! This will locate Garry's Mod anywhere on the filesystem.
-//! ```ignore
-//! extern crate steamlocate;
-//! use steamlocate::SteamDir;
-//!
-//! let mut steamdir = SteamDir::locate().unwrap();
-//! match steamdir.app(&4000) {
-//!     Some(app) => println!("{:#?}", app),
-//!     None => panic!("Couldn't locate Garry's Mod on this computer!")
-//! }
+//! const GMOD_APP_ID: u32 = 4_000;
+//! let garrys_mod = steam_dir.app(GMOD_APP_ID)?.expect("Of course we have G Mod");
+//! assert_eq!(garrys_mod.name.as_ref().unwrap(), "Garry's Mod");
+//! println!("{garrys_mod:#?}");
+//! // ^^ prints something like vv
+//! # Ok::<_, steamlocate::tests::TestError>(())
 //! ```
 //! ```ignore
-//! App (
-//!     appid: u32: 4000,
-//!     path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-//!     vdf: <steamy_vdf::Table>,
-//!     name: Some(String: "Garry's Mod"),
-//!     last_user: Some(u64: 76561198040894045)
+//! App {
+//!     app_id: 4_000,
+//!     install_dir: "GarrysMod",
+//!     name: Some("Garry's Mod"),
+//!     universe: Some(Public),
+//!     // much much more data
 //! )
 //! ```
 //!
 //! ### Locate all Steam apps on this filesystem
+//!
 //! ```ignore
 //! extern crate steamlocate;
 //! use steamlocate::{SteamDir, App};
@@ -129,8 +122,10 @@ pub mod library;
 #[cfg(feature = "locate")]
 mod locate;
 pub mod shortcut;
-#[cfg(any(test, doctest))]
-pub mod tests;
+// NOTE: exposed publicly, so that we can use them in doctests
+/// Not part of the public API
+#[doc(hidden)]
+pub mod tests; // TODO: rename this if it's gonna be part of the public API
 
 use std::collections::HashMap;
 use std::fs;
