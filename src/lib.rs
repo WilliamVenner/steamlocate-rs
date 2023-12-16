@@ -24,7 +24,7 @@
 //! The [`SteamDir`] is going to be your entrypoint into _most_ parts of the API. After you locate
 //! it you can access related information.
 //!
-//! ```rust
+//! ```
 //! # /*
 //! let steam_dir = steamlocate::SteamDir::locate()?;
 //! # */
@@ -34,7 +34,9 @@
 //! // ^^ prints something like `Steam installation - C:\Program Files (x86)\Steam`
 //!
 //! const GMOD_APP_ID: u32 = 4_000;
-//! let (garrys_mod, _lib) = steam_dir.find_app(GMOD_APP_ID)?.expect("Of course we have G Mod");
+//! let (garrys_mod, _lib) = steam_dir
+//!     .find_app(GMOD_APP_ID)?
+//!     .expect("Of course we have G Mod");
 //! assert_eq!(garrys_mod.name.as_ref().unwrap(), "Garry's Mod");
 //! println!("{garrys_mod:#?}");
 //! // ^^ prints something like vv
@@ -119,6 +121,11 @@ pub use crate::config::CompatTool;
 pub use crate::error::{Error, Result};
 pub use crate::library::Library;
 pub use crate::shortcut::Shortcut;
+
+// Run doctests on the README too
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+pub struct ReadmeDoctests;
 
 /// The entrypoint into most of the rest of the API
 ///
