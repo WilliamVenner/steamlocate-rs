@@ -1,0 +1,34 @@
+---
+source: src/app.rs
+expression: app
+---
+App(
+  appid: 2519830,
+  installdir: "Resonite",
+  name: None,
+  LastOwner: None,
+  Universe: None,
+  LauncherPath: None,
+  StateFlags: None,
+  LastUpdated: None,
+  UpdateResult: None,
+  SizeOnDisk: None,
+  buildid: None,
+  BytesToDownload: None,
+  BytesDownloaded: None,
+  BytesToStage: None,
+  BytesStaged: None,
+  StagingSize: None,
+  TargetBuildID: None,
+  AutoUpdateBehavior: None,
+  AllowOtherDownloadsWhileRunning: None,
+  ScheduledAutoUpdate: None,
+  FullValidateBeforeNextUpdate: None,
+  FullValidateAfterNextUpdate: None,
+  InstalledDepots: {},
+  StagedDepots: {},
+  UserConfig: {},
+  MountedConfig: {},
+  InstallScripts: {},
+  SharedDepots: {},
+)
