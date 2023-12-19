@@ -66,7 +66,7 @@ pub struct App {
     pub launcher_path: Option<PathBuf>,
     pub state_flags: Option<StateFlags>,
     // TODO: Need to handle this for serializing too before `App` can `impl Serialize`
-    #[serde(deserialize_with = "de_time_as_secs_from_unix_epoch")]
+    #[serde(default, deserialize_with = "de_time_as_secs_from_unix_epoch")]
     pub last_updated: Option<time::SystemTime>,
     // Can't find anything on what these values mean. I've seen 0, 2, 4, 6, and 7
     pub update_result: Option<u64>,
@@ -410,6 +410,20 @@ mod tests {
 
     fn app_from_manifest_str(s: &str) -> App {
         keyvalues_serde::from_str(s).unwrap()
+    }
+
+    #[test]
+    fn minimal() {
+        let minimal = r#"
+"AppState"
+{
+	"appid"		"2519830"
+	"installdir" "Resonite"
+}
+"#;
+
+        let app = app_from_manifest_str(minimal);
+        insta::assert_ron_snapshot!(app);
     }
 
     #[test]
