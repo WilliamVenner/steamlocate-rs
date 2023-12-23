@@ -1,0 +1,50 @@
+"AppState"
+{
+	"appid"		"2519830"
+	"Universe"		"1"
+	"name"		"Resonite"
+	"StateFlags"		"4"
+	"installdir"		"Resonite"
+	"lastupdated"		"1702688752"
+	"SizeOnDisk"		"1102323116"
+	"StagingSize"		"0"
+	"buildid"		"12967476"
+	"LastOwner"		"76561198022773299"
+	"UpdateResult"		"0"
+	"BytesToDownload"		"2332576"
+	"BytesDownloaded"		"2332576"
+	"BytesToStage"		"54625540"
+	"BytesStaged"		"54625540"
+	"TargetBuildID"		"12967476"
+	"AutoUpdateBehavior"		"0"
+	"AllowOtherDownloadsWhileRunning"		"0"
+	"ScheduledAutoUpdate"		"0"
+	"InstalledDepots"
+	{
+		"2519832"
+		{
+			"manifest"		"1396658363472368690"
+			"size"		"514493538"
+		}
+		"2519831"
+		{
+			"manifest"		"5082223756179978205"
+			"size"		"587829578"
+		}
+	}
+	"SharedDepots"
+	{
+		"228984"		"228980"
+		"228985"		"228980"
+		"228988"		"228980"
+		"228989"		"228980"
+	}
+	"UserConfig"
+	{
+		"language"		"english"
+	}
+	"MountedConfig"
+	{
+		"language"		"english"
+	}
+}
