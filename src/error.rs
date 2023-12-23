@@ -53,6 +53,7 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 
 impl Error {
+    #[cfg(feature = "locate")]
     pub(crate) fn locate(locate: LocateError) -> Self {
         Self::FailedLocate(locate)
     }
@@ -110,6 +111,7 @@ impl fmt::Display for LocateError {
 
 #[derive(Clone, Debug)]
 pub struct BackendError {
+    #[cfg(feature = "locate")]
     #[allow(dead_code)] // Only used for displaying currently
     inner: BackendErrorInner,
 }
@@ -126,11 +128,18 @@ impl fmt::Display for BackendError {
                 BackendErrorInner::NoHome => f.write_str("Unable to locate the user's $HOME"),
             }
         }
+        #[cfg(not(feature = "locate"))]
+        {
+            // "Use" the unused value
+            let _ = f;
+            unreachable!("This should never be constructed!");
+        }
     }
 }
 
 // TODO: move all this conditional junk into different modules, so that I don't have to keep
 // repeating it everywhere
+// TODO: ^^
 #[derive(Clone, Debug)]
 #[cfg(all(feature = "locate", target_os = "windows"))]
 struct BackendErrorInner(std::sync::Arc<io::Error>);
