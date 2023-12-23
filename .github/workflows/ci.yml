@@ -35,3 +35,16 @@ jobs:
         env:
           RUSTDOCFLAGS: -Dwarnings
         run: cargo doc --all --no-deps
+
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@wasm-pack
+      - name: Run wasm tests (`--no-default-features`)
+        run: wasm-pack test --node --no-default-features
+      - name: Run wasm tests (`--all-features`)
+        run: wasm-pack test --node --all-features

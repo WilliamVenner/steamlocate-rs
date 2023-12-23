@@ -14,8 +14,6 @@ categories = ["os", "hardware-support", "filesystem", "accessibility"]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
-# TODO: test more features in CI
-
 [features]
 default = ["locate"]
 locate = ["locate_backend"]
@@ -34,3 +32,16 @@ locate_backend = { package = "dirs", version = "5", optional = true }
 
 [dev-dependencies]
 insta = { version = "1.34.0", features = ["ron"] }
+wasm-bindgen-test = "0.3.39"
+
+[[example]]
+name = "appmanifest"
+required-features = ["locate"]
+
+[[example]]
+name = "overview"
+required-features = ["locate"]
+
+[[example]]
+name = "shortcuts"
+required-features = ["locate"]
