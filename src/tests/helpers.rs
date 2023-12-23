@@ -255,9 +255,11 @@ impl AppFile {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum SampleApp {
     GarrysMod,
     GraveyardKeeper,
+    Resonite,
     Warframe,
 }
 
@@ -285,6 +287,11 @@ impl SampleApp {
                 599_140,
                 "Graveyard Keeper",
                 include_str!("../../tests/assets/appmanifest_599140.acf"),
+            ),
+            Self::Resonite => (
+                2_519_830,
+                "Resonite",
+                include_str!("../../tests/assets/appmanifest_2519830.acf"),
             ),
             Self::Warframe => (
                 230_410,
