@@ -1,0 +1,47 @@
+---
+source: src/app.rs
+expression: app
+---
+App(
+  appid: 230410,
+  installdir: "Warframe",
+  name: Some("Warframe"),
+  LastOwner: Some(12312312312312312),
+  Universe: Some(Public),
+  LauncherPath: Some("C:\\Program Files (x86)\\Steam\\steam.exe"),
+  StateFlags: Some(StateFlags(4)),
+  LastUpdated: Some(SystemTime(
+    secs_since_epoch: 1630871495,
+    nanos_since_epoch: 0,
+  )),
+  UpdateResult: Some(2),
+  SizeOnDisk: Some(29070834580),
+  buildid: Some(6988007),
+  BytesToDownload: Some(28490671360),
+  BytesDownloaded: Some(28490671360),
+  BytesToStage: Some(29070834580),
+  BytesStaged: Some(29070834580),
+  StagingSize: None,
+  TargetBuildID: None,
+  AutoUpdateBehavior: Some(KeepUpToDate),
+  AllowOtherDownloadsWhileRunning: Some(UseGlobalSetting),
+  ScheduledAutoUpdate: Some(Zero),
+  FullValidateBeforeNextUpdate: None,
+  FullValidateAfterNextUpdate: None,
+  InstalledDepots: {
+    230411: Depot(
+      manifest: 1659398175797234554,
+      size: 29070834580,
+      dlcappid: None,
+    ),
+  },
+  StagedDepots: {},
+  UserConfig: {
+    "language": "english",
+  },
+  MountedConfig: {},
+  InstallScripts: {
+    230411: "installscript.vdf",
+  },
+  SharedDepots: {},
+)

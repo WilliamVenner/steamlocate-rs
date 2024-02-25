@@ -1,0 +1,50 @@
+---
+source: src/app.rs
+expression: app
+---
+App(
+  appid: 599140,
+  installdir: "Graveyard Keeper",
+  name: Some("Graveyard Keeper"),
+  LastOwner: Some(12312312312312312),
+  Universe: Some(Public),
+  LauncherPath: None,
+  StateFlags: Some(StateFlags(6)),
+  LastUpdated: Some(SystemTime(
+    secs_since_epoch: 1672176869,
+    nanos_since_epoch: 0,
+  )),
+  UpdateResult: Some(0),
+  SizeOnDisk: Some(1805798572),
+  buildid: Some(8559806),
+  BytesToDownload: Some(24348080),
+  BytesDownloaded: Some(0),
+  BytesToStage: Some(1284862702),
+  BytesStaged: Some(0),
+  StagingSize: Some(0),
+  TargetBuildID: Some(8559806),
+  AutoUpdateBehavior: Some(OnlyUpdateOnLaunch),
+  AllowOtherDownloadsWhileRunning: Some(Allow),
+  ScheduledAutoUpdate: Some(Time(SystemTime(
+    secs_since_epoch: 1678457806,
+    nanos_since_epoch: 0,
+  ))),
+  FullValidateBeforeNextUpdate: None,
+  FullValidateAfterNextUpdate: None,
+  InstalledDepots: {
+    599143: Depot(
+      manifest: 8776335556818666951,
+      size: 1805798572,
+      dlcappid: None,
+    ),
+  },
+  StagedDepots: {},
+  UserConfig: {
+    "language": "english",
+  },
+  MountedConfig: {
+    "language": "english",
+  },
+  InstallScripts: {},
+  SharedDepots: {},
+)

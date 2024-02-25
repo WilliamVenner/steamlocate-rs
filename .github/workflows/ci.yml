@@ -10,30 +10,41 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
-    runs-on: ${{ matrix.os }}
+  validation:
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        toolchain: [stable, beta]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
-      - name: Clippy
+      - name: Install ${{ matrix.toolchain }} toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: clippy, rustfmt
+      - name: Setup cache
+        uses: Swatinem/rust-cache@v2
+      - name: Commune with clippy
         run: cargo clippy --all -- -D warnings
-
-  fmt:
-    needs: check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
       - name: Check formatting
         run: cargo fmt --all -- --check
+      - name: Run test suite
+        run: cargo test
+      - name: Check docs
+        env:
+          RUSTDOCFLAGS: -Dwarnings
+        run: cargo doc --all --no-deps
 
-  docs:
-    needs: fmt
+  wasm:
     runs-on: ubuntu-latest
-    env:
-      RUSTDOCFLAGS: -Dwarnings
     steps:
       - uses: actions/checkout@v3
-      - name: Check docs
-        run: cargo doc --all --no-deps
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@wasm-pack
+      - name: Run wasm tests (`--no-default-features`)
+        run: wasm-pack test --node --no-default-features
+      - name: Run wasm tests (`--all-features`)
+        run: wasm-pack test --node --all-features

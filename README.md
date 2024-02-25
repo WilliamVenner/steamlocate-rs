@@ -5,127 +5,97 @@
 
 # steamlocate
 
-A crate which efficiently locates any Steam application on the filesystem, and/or the Steam installation itself.
+A crate which efficiently locates any Steam application on the filesystem,
+and/or the Steam installation itself.
 
-This crate is best used when you do not want to depend on the Steamworks API for your program. In some cases the Steamworks API may be more appropriate to use, in which case I recommend the fantastic [steamworks](https://github.com/Thinkofname/steamworks-rs) crate. You don't need to be a Steamworks partner to get installation directory locations from the Steamworks API.
+This crate is best used when you do not want to depend on the Steamworks API
+for your program. In some cases the Steamworks API may be more appropriate to
+use, in which case I recommend the fantastic
+[steamworks](https://github.com/Thinkofname/steamworks-rs) crate. You don't
+need to be a Steamworks partner to get installation directory locations from
+the Steamworks API.
 
-**This crate supports Windows, macOS and Linux.**
+# Using steamlocate
 
-## Using steamlocate
-Simply add to your [Cargo.toml](https://doc.rust-lang.org/cargo/reference/manifest.html) file:
-```toml
-[dependencies]
-steamlocate = "0.*"
+Simply add `steamlocate` using
+[`cargo`](https://doc.rust-lang.org/cargo/getting-started/installation.html).
+
+```console
+$ cargo add steamlocate
 ```
 
-To use [steamid-ng](#steamid-ng-support) with steamlocate, add this to your [Cargo.toml](https://doc.rust-lang.org/cargo/reference/manifest.html) file:
-```toml
-[dependencies]
-steamid-ng = "1.*"
+## Feature flags
 
-[dependencies.steamlocate]
-version = "0.*"
-features = ["steamid_ng"]
+Default: `locate`
+
+| Feature flag | Description |
+| :---: | :--- |
+| `locate` | Enables automatically detecting the Steam installation on supported platforms (currently Windows, MacOS, and Linux). Unsupported platforms will return a runtime error. |
+
+# Examples
+
+## Locate the Steam installation and a specific game
+
+The `SteamDir` is going to be your entrypoint into _most_ parts of the API.
+After you locate it you can access related information.
+
+```rust,ignore
+let steam_dir = steamlocate::SteamDir::locate()?;
+println!("Steam installation - {}", steam_dir.path().display());
+// ^^ prints something like `Steam installation - C:\Program Files (x86)\Steam`
+
+const GMOD_APP_ID: u32 = 4_000;
+let (garrys_mod, _lib) = steam_dir
+    .find_app(GMOD_APP_ID)?
+    .expect("Of course we have G Mod");
+assert_eq!(garrys_mod.name.as_ref().unwrap(), "Garry's Mod");
+println!("{garrys_mod:#?}");
+// ^^ prints something like vv
 ```
-
-## Caching
-All functions in this crate cache their results, meaning you can call them as many times as you like and they will always return the same reference.
-
-If you need to get uncached results, simply instantiate a new [SteamDir](https://docs.rs/steamlocate/*/steamlocate/struct.SteamDir.html).
-
-## steamid-ng Support
-This crate supports [steamid-ng](https://docs.rs/steamid-ng) and can automatically convert [SteamApp::last_user](struct.SteamApp.html#structfield.last_user) to a [SteamID](https://docs.rs/steamid-ng/*/steamid_ng/struct.SteamID.html) for you.
-
-To enable this support, [use the  `steamid_ng` Cargo.toml feature](#using-steamlocate).
-
-## Examples
-
-#### Locate the installed Steam directory
-```rust
-extern crate steamlocate;
-use steamlocate::SteamDir;
-
-match SteamDir::locate() {
-	Some(steamdir) => println!("{:#?}", steamdir),
-	None => panic!("Couldn't locate Steam on this computer!")
-}
-```
-```rust
-SteamDir (
-	path: PathBuf: "C:\\Program Files (x86)\\Steam"
-)
-```
-
-#### Locate an installed Steam app by its app ID
-This will locate Garry's Mod anywhere on the filesystem.
-```rust
-extern crate steamlocate;
-use steamlocate::SteamDir;
-
-let mut steamdir = SteamDir::locate().unwrap();
-match steamdir.app(&4000) {
-	Some(app) => println!("{:#?}", app),
-	None => panic!("Couldn't locate Garry's Mod on this computer!")
-}
-```
-```rust
-SteamApp (
-	appid: u32: 4000,
-	path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-	vdf: <steamy_vdf::Table>,
-	name: Some(String: "Garry's Mod"),
-	last_user: Some(u64: 76561198040894045)
-)
-```
-
-#### Locate all Steam apps on this filesystem
-```rust
-extern crate steamlocate;
-use steamlocate::{SteamDir, SteamApp};
-use std::collections::HashMap;
-
-let mut steamdir = SteamDir::locate().unwrap();
-let apps: &HashMap<u32, Option<SteamApp>> = steamdir.apps();
-
-println!("{:#?}", apps);
-```
-```rust
-{
-	4000: SteamApp (
-		appid: u32: 4000,
-		path: PathBuf: "C:\\Program Files (x86)\\steamapps\\common\\GarrysMod",
-		vdf: <steamy_vdf::Table>,
-		name: Some(String: "Garry's Mod"),
-		last_user: Some(u64: 76561198040894045)
-	)
-	...
+```rust,ignore
+App {
+    app_id: 4_000,
+    install_dir: "GarrysMod",
+    name: Some("Garry's Mod"),
+    universe: Some(Public),
+    // much much more data
 }
 ```
 
-#### Locate all Steam library folders
-```rust
-extern crate steamlocate;
-use steamlocate::{SteamDir, LibraryFolders};
-use std::{vec, path::PathBuf};
+## Get an overview of all libraries and apps on the system
 
-let mut steamdir: SteamDir = SteamDir::locate().unwrap();
-let libraryfolders: &LibraryFolders = steamdir.libraryfolders();
-let paths: &Vec<PathBuf> = &libraryfolders.paths;
+You can iterate over all of Steam's libraries from the steam dir. Then from each library you
+can iterate over all of its apps.
 
-println!("{:#?}", paths);
-```
-```rust
-{
-	"C:\\Program Files (x86)\\Steam\\steamapps",
-	"D:\\Steam\\steamapps",
-	"E:\\Steam\\steamapps",
-	"F:\\Steam\\steamapps",
-	...
+```rust,ignore
+let steam_dir = steamlocate::SteamDir::locate()?;
+
+for library in steam_dir.libraries()? {
+    let library = library?;
+    println!("Library - {}", library.path().display());
+
+    for app in library.apps() {
+        let app = app?;
+        println!("    App {} - {:?}", app.app_id, app.name);
+    }
 }
+```
+
+On my laptop this prints
+
+```text
+Library - /home/wintermute/.local/share/Steam
+    App 1628350 - Steam Linux Runtime 3.0 (sniper)
+    App 1493710 - Proton Experimental
+    App 4000 - Garry's Mod
+Library - /home/wintermute/temp steam lib
+    App 391540 - Undertale
+    App 1714040 - Super Auto Pets
+    App 2348590 - Proton 8.0
 ```
 
 ## Contribution
 
 Unless you explicitly state otherwise, any contribution intentionally
 submitted for inclusion in the work by you, as defined in the MIT license,
-shall be dual licensed as above, without any additional terms or conditions.
+shall be licensed as above, without any additional terms or conditions.
