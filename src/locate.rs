@@ -2,8 +2,17 @@ use std::path::PathBuf;
 
 use crate::Result;
 
-pub fn locate_steam_dir() -> Result<PathBuf> {
-    locate_steam_dir_helper()
+pub fn locate_steam_dir() -> Result<Vec<PathBuf>> {
+    #[cfg(target_os = "linux")]
+    return locate_steam_dir_helper();
+    #[cfg(not(target_os = "linux"))]
+    {
+        let result = locate_steam_dir_helper();
+        match result {
+            Ok(path) => return Ok(vec![path]),
+            Err(e) => return Err(e),
+        };
+    }
 }
 
 #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
@@ -60,7 +69,7 @@ fn locate_steam_dir_helper() -> Result<PathBuf> {
 }
 
 #[cfg(target_os = "linux")]
-fn locate_steam_dir_helper() -> Result<PathBuf> {
+fn locate_steam_dir_helper() -> Result<Vec<PathBuf>> {
     use std::env;
 
     use crate::error::{Error, LocateError, ValidationError};
@@ -90,8 +99,5 @@ fn locate_steam_dir_helper() -> Result<PathBuf> {
         snap_dir.join("steam/common/.steam/root"),
     ];
 
-    steam_paths
-        .into_iter()
-        .find(|x| x.is_dir())
-        .ok_or_else(|| Error::validation(ValidationError::missing_dir()))
+    Ok(steam_paths.into_iter().filter(|x| x.is_dir()).collect())
 }
