@@ -19,6 +19,7 @@ default = ["locate"]
 locate = ["locate_backend"]
 
 [dependencies]
+anyhow = "1.0.86"
 crc = "3.0"
 keyvalues-parser = "0.2"
 keyvalues-serde = "0.2"
