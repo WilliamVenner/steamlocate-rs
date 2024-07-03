@@ -5,7 +5,7 @@
 
 use std::{collections, env, fs, hash, path};
 
-use crate::tests::TestError;
+use super::TestError;
 
 #[derive(Debug)]
 pub struct TempDir(Option<path::PathBuf>);
@@ -15,7 +15,6 @@ impl TempDir {
         let mut dir = env::temp_dir();
         let random_name = format!("steamlocate-test-{:x}", random_seed());
         dir.push(random_name);
-        // TODO: could retry on failure
         fs::create_dir_all(&dir)?;
         Ok(Self(Some(dir)))
     }

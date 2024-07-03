@@ -1,7 +1,5 @@
 //! Some test helpers for setting up isolated dummy steam installations.
 
-// TODO: add a test with an env var flag that runs against your real local steam installation?
-
 use std::{
     collections::BTreeMap,
     convert::{TryFrom, TryInto},
@@ -9,10 +7,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{
-    tests::{temp::TempDir, TestError},
-    SteamDir,
-};
+use super::{temp::TempDir, TestError};
+use crate::SteamDir;
 
 use serde::Serialize;
 
@@ -305,7 +301,7 @@ impl SampleApp {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::tests::TestResult;
+    use crate::__private_tests::TestResult;
 
     #[test]
     fn sanity() -> TestResult {

@@ -135,7 +135,6 @@ impl Library {
         &self.path
     }
 
-    // TODO: if this was sorted then we could locate single apps faster
     pub fn app_ids(&self) -> &[u32] {
         &self.apps
     }
@@ -163,14 +162,14 @@ impl Library {
     ///
     /// ```
     /// # use std::path::Path;
-    /// # let temp_steam_dir = steamlocate::tests::helpers::expect_test_env();
+    /// # let temp_steam_dir = steamlocate::__private_tests::helpers::expect_test_env();
     /// # let steam_dir = temp_steam_dir.steam_dir();
     /// const GRAVEYARD_KEEPER: u32 = 599_140;
     /// let (graveyard_keeper, library) = steam_dir.find_app(GRAVEYARD_KEEPER)?.unwrap();
     /// let app_dir = library.resolve_app_dir(&graveyard_keeper);
     /// let expected_rel_path = Path::new("steamapps").join("common").join("Graveyard Keeper");
     /// assert!(app_dir.ends_with(expected_rel_path));
-    /// # Ok::<_, steamlocate::tests::TestError>(())
+    /// # Ok::<_, steamlocate::__private_tests::TestError>(())
     /// ```
     pub fn resolve_app_dir(&self, app: &App) -> PathBuf {
         self.path
