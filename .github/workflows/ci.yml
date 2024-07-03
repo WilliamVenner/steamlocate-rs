@@ -17,7 +17,7 @@ jobs:
         toolchain: [stable, beta]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install ${{ matrix.toolchain }} toolchain
         uses: dtolnay/rust-toolchain@master
         with:
@@ -39,7 +39,7 @@ jobs:
   wasm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Install wasm-pack
