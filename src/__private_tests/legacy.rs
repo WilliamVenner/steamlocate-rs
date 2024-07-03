@@ -1,10 +1,8 @@
-use crate::{
-    tests::{
-        helpers::{expect_test_env, SampleApp},
-        TestResult,
-    },
-    Error,
+use super::{
+    helpers::{expect_test_env, SampleApp},
+    TestResult,
 };
+use crate::Error;
 
 static GMOD_ID: u32 = SampleApp::GarrysMod.id();
 

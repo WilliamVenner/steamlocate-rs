@@ -65,7 +65,7 @@ pub struct App {
     pub universe: Option<Universe>,
     pub launcher_path: Option<PathBuf>,
     pub state_flags: Option<StateFlags>,
-    // TODO: Need to handle this for serializing too before `App` can `impl Serialize`
+    // NOTE: Need to handle this for serializing too before `App` can `impl Serialize`
     #[serde(
         alias = "lastupdated",
         default,
@@ -163,14 +163,8 @@ impl StateFlags {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct StateFlagIter(Option<StateFlagIterInner>);
-
-impl StateFlagIter {
-    fn from_valid(valid: ValidIter) -> Self {
-        Self(Some(StateFlagIterInner::Valid(valid)))
-    }
-}
 
 impl From<StateFlags> for StateFlagIter {
     fn from(state: StateFlags) -> Self {
@@ -186,22 +180,21 @@ impl Iterator for StateFlagIter {
         // - None indicates the iterator is done (trap state)
         // - Invalid will emit invalid once and finish
         // - Valid will pull on the inner iterator till it's finished
-        let current = std::mem::take(self);
-        let (next, ret) = match current.0? {
-            StateFlagIterInner::Invalid => (Self::default(), StateFlag::Invalid),
+        let current = std::mem::take(&mut self.0);
+        let (next, ret) = match current? {
+            StateFlagIterInner::Invalid => (None, StateFlag::Invalid),
             StateFlagIterInner::Valid(mut valid) => {
                 let ret = valid.next()?;
-                (Self::from_valid(valid), ret)
+                (Some(StateFlagIterInner::Valid(valid)), ret)
             }
         };
-        *self = next;
+        self.0 = next;
         Some(ret)
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 enum StateFlagIterInner {
-    #[default]
     Invalid,
     Valid(ValidIter),
 }
@@ -337,12 +330,6 @@ impl From<u64> for AllowOtherDownloadsWhileRunning {
     }
 }
 
-impl Default for AllowOtherDownloadsWhileRunning {
-    fn default() -> Self {
-        Self::UseGlobalSetting
-    }
-}
-
 impl_deserialize_from_u64!(AllowOtherDownloadsWhileRunning);
 
 #[derive(Debug, Clone, PartialEq)]
@@ -362,13 +349,6 @@ impl From<u64> for AutoUpdateBehavior {
             2 => Self::UpdateWithHighPriority,
             unknown => Self::Unknown(unknown),
         }
-    }
-}
-
-// TODO: Maybe don't have these defaults?
-impl Default for AutoUpdateBehavior {
-    fn default() -> Self {
-        Self::KeepUpToDate
     }
 }
 

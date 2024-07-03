@@ -1,4 +1,4 @@
-use crate::tests::{
+use super::{
     helpers::{SampleApp, TempSteamDir},
     TestResult,
 };

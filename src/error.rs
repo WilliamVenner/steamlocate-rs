@@ -139,7 +139,6 @@ impl fmt::Display for BackendError {
 
 // TODO: move all this conditional junk into different modules, so that I don't have to keep
 // repeating it everywhere
-// TODO: ^^
 #[derive(Clone, Debug)]
 #[cfg(all(feature = "locate", target_os = "windows"))]
 struct BackendErrorInner(std::sync::Arc<io::Error>);
