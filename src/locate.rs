@@ -49,10 +49,10 @@ fn locate_steam_dir_helper() -> Result<PathBuf> {
 #[cfg(target_os = "macos")]
 fn locate_steam_dir_helper() -> Result<PathBuf> {
     use crate::{error::LocateError, Error};
-    use locate_backend as dirs;
+    use locate_backend as home;
     // Steam's installation location is pretty easy to find on macOS, as it's always in
     // $USER/Library/Application Support
-    let home_dir = dirs::home_dir().ok_or_else(|| Error::locate(LocateError::no_home()))?;
+    let home_dir = home::home_dir().ok_or_else(|| Error::locate(LocateError::no_home()))?;
 
     // Find Library/Application Support/Steam
     let install_path = home_dir.join("Library/Application Support/Steam");
@@ -65,10 +65,10 @@ fn locate_steam_dir_helper() -> Result<PathBuf> {
 
     use crate::error::{Error, LocateError, ValidationError};
 
-    use locate_backend as dirs;
+    use locate_backend as home;
 
     // Steam's installation location is pretty easy to find on Linux, too, thanks to the symlink in $USER
-    let home_dir = dirs::home_dir().ok_or_else(|| Error::locate(LocateError::no_home()))?;
+    let home_dir = home::home_dir().ok_or_else(|| Error::locate(LocateError::no_home()))?;
     let snap_dir = match env::var("SNAP_USER_DATA") {
         Ok(snap_dir) => PathBuf::from(snap_dir),
         Err(_) => home_dir.join("snap"),
