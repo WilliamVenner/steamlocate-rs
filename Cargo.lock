@@ -334,6 +334,7 @@ dependencies = [
  "keyvalues-parser",
  "keyvalues-serde",
  "serde",
+ "serde_derive",
  "wasm-bindgen-test",
  "winreg",
 ]
