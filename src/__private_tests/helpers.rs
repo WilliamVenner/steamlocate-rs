@@ -2,7 +2,6 @@
 
 use std::{
     collections::BTreeMap,
-    convert::{TryFrom, TryInto},
     fs, iter,
     path::{Path, PathBuf},
 };
