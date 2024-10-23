@@ -28,7 +28,8 @@
 //! # /*
 //! let steam_dir = steamlocate::SteamDir::locate()?;
 //! # */
-//! # let temp_steam_dir = steamlocate::__private_tests::helpers::expect_test_env();
+//! # use steamlocate::__private_tests::prelude::*;
+//! # let temp_steam_dir = expect_test_env();
 //! # let steam_dir = temp_steam_dir.steam_dir();
 //! println!("Steam installation - {}", steam_dir.path().display());
 //! // ^^ prints something like `Steam installation - C:\Program Files (x86)\Steam`
@@ -40,7 +41,7 @@
 //! assert_eq!(garrys_mod.name.as_ref().unwrap(), "Garry's Mod");
 //! println!("{garrys_mod:#?}");
 //! // ^^ prints something like vv
-//! # Ok::<_, steamlocate::__private_tests::TestError>(())
+//! # Ok::<_, TestError>(())
 //! ```
 //! ```ignore
 //! App {
@@ -61,7 +62,8 @@
 //! # /*
 //! let steam_dir = steamlocate::SteamDir::locate()?;
 //! # */
-//! # let temp_steam_dir = steamlocate::__private_tests::helpers::expect_test_env();
+//! # use steamlocate::__private_tests::prelude::*;
+//! # let temp_steam_dir = expect_test_env();
 //! # let steam_dir = temp_steam_dir.steam_dir();
 //!
 //! for library in steam_dir.libraries()? {
@@ -73,7 +75,7 @@
 //!         println!("    App {} - {:?}", app.app_id, app.name);
 //!     }
 //! }
-//! # Ok::<_, steamlocate::__private_tests::TestError>(())
+//! # Ok::<_, TestError>(())
 //! ```
 //!
 //! On my laptop this prints
@@ -149,7 +151,8 @@ pub struct ReadmeDoctests;
 /// # /*
 /// let steam_dir = SteamDir::locate()?;
 /// # */
-/// # let temp_steam_dir = steamlocate::__private_tests::helpers::expect_test_env();
+/// # use steamlocate::__private_tests::prelude::*;
+/// # let temp_steam_dir = expect_test_env();
 /// # let steam_dir = temp_steam_dir.steam_dir();
 /// assert!(steam_dir.path().ends_with("Steam"));
 /// ```
@@ -180,7 +183,8 @@ impl SteamDir {
     ///
     /// # Example
     /// ```
-    /// # let temp_steam_dir = steamlocate::__private_tests::helpers::expect_test_env();
+    /// # use steamlocate::__private_tests::prelude::*;
+    /// # let temp_steam_dir = expect_test_env();
     /// # let steam_dir = temp_steam_dir.steam_dir();
     /// # /*
     /// let steam_dir = SteamDir::locate()?;
@@ -189,7 +193,7 @@ impl SteamDir {
     /// let (warframe, library) = steam_dir.find_app(WARFRAME)?.unwrap();
     /// assert_eq!(warframe.app_id, WARFRAME);
     /// assert!(library.app_ids().contains(&warframe.app_id));
-    /// # Ok::<_, steamlocate::__private_tests::TestError>(())
+    /// # Ok::<_, TestError>(())
     /// ```
     pub fn find_app(&self, app_id: u32) -> Result<Option<(App, Library)>> {
         // Search for the `app_id` in each library

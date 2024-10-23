@@ -162,14 +162,15 @@ impl Library {
     ///
     /// ```
     /// # use std::path::Path;
-    /// # let temp_steam_dir = steamlocate::__private_tests::helpers::expect_test_env();
+    /// # use steamlocate::__private_tests::prelude::*;
+    /// # let temp_steam_dir = expect_test_env();
     /// # let steam_dir = temp_steam_dir.steam_dir();
     /// const GRAVEYARD_KEEPER: u32 = 599_140;
     /// let (graveyard_keeper, library) = steam_dir.find_app(GRAVEYARD_KEEPER)?.unwrap();
     /// let app_dir = library.resolve_app_dir(&graveyard_keeper);
     /// let expected_rel_path = Path::new("steamapps").join("common").join("Graveyard Keeper");
     /// assert!(app_dir.ends_with(expected_rel_path));
-    /// # Ok::<_, steamlocate::__private_tests::TestError>(())
+    /// # Ok::<_, TestError>(())
     /// ```
     pub fn resolve_app_dir(&self, app: &App) -> PathBuf {
         self.path
