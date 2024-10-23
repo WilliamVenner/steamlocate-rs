@@ -12,7 +12,10 @@ use crate::{
     Error, Result,
 };
 
-/// A added non-Steam game
+// TODO: refactor this to remove storing the `steam_id` and instead make it a method that
+// calculates on demand. That fixes some API issues and more directly represents the underlying
+// data. This also means that `fn new()` can be removed
+/// A non-Steam game that has been added to Steam
 ///
 /// Information is parsed from your `userdata/<user_id>/config/shortcuts.vdf` files
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -58,6 +61,9 @@ impl Shortcut {
     }
 }
 
+/// An [`Iterator`] over a Steam installation's [`Shortcut`]s
+///
+/// Returned from calling [`SteamDir::shortcuts()`][super::SteamDir::shortcuts]
 pub struct Iter {
     dir: PathBuf,
     read_dir: fs::ReadDir,

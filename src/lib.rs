@@ -174,6 +174,29 @@ impl SteamDir {
         library::parse_library_paths(&libraryfolders_vdf)
     }
 
+    /// Returns an [`Iterator`] over all the [`Library`]s believed to be part of this installation
+    ///
+    /// For reasons akin to [`std::fs::read_dir()`] this method both returns a [`Result`] and
+    /// returns [`Result`]s for the iterator's items.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # /*
+    /// let steam_dir = SteamDir::locate()?;
+    /// # */
+    /// # use steamlocate::__private_tests::prelude::*;
+    /// # let temp_steam_dir = expect_test_env();
+    /// # let steam_dir = temp_steam_dir.steam_dir();
+    /// let num_apps: usize = steam_dir
+    ///     .libraries()?
+    ///     .filter_map(Result::ok)
+    ///     .map(|lib| lib.app_ids().len())
+    ///     .sum();
+    /// println!("Wow you have {num_apps} installed!");
+    /// # assert_eq!(num_apps, 3);
+    /// # Ok::<_, TestError>(())
+    /// ```
     pub fn libraries(&self) -> Result<library::Iter> {
         let paths = self.library_paths()?;
         Ok(library::Iter::new(paths))
@@ -182,6 +205,7 @@ impl SteamDir {
     /// Convenient helper to look through all the libraries for a specific app
     ///
     /// # Example
+    ///
     /// ```
     /// # use steamlocate::__private_tests::prelude::*;
     /// # let temp_steam_dir = expect_test_env();
@@ -206,6 +230,7 @@ impl SteamDir {
             .transpose()
     }
 
+    // TODO: `Iterator`ify this
     pub fn compat_tool_mapping(&self) -> Result<HashMap<u32, CompatTool>> {
         let config_path = self.path.join("config").join("config.vdf");
         let vdf_text =
@@ -243,8 +268,25 @@ impl SteamDir {
         shortcut::Iter::new(&self.path)
     }
 
-    // TODO: rename to `from_dir()` and make consitent with similar constructors on other structs
-    pub fn from_dir(path: &Path) -> Result<SteamDir> {
+    /// Attempt to create a [`SteamDir`] from its installation directory
+    ///
+    /// When possible you should prefer using [`SteamDir::locate()`]
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use steamlocate::SteamDir;
+    /// # use steamlocate::__private_tests::prelude::*;
+    /// # let temp_steam_dir = expect_test_env();
+    /// # let steam_dir = temp_steam_dir.steam_dir();
+    /// # /*
+    /// let steam_dir = SteamDir::locate()?;
+    /// # */
+    /// let steam_path = steam_dir.path();
+    /// let still_steam_dir = SteamDir::from_dir(steam_path).expect("We just located it");
+    /// assert_eq!(still_steam_dir.path(), steam_path);
+    /// ```
+    pub fn from_dir(path: &Path) -> Result<Self> {
         if !path.is_dir() {
             return Err(Error::validation(ValidationError::missing_dir()));
         }
@@ -257,8 +299,14 @@ impl SteamDir {
     }
 
     /// Attempts to locate the Steam installation directory on the system
+    ///
+    /// See the [example on the struct docs][Self#example]
+	///
+	/// Uses platform specific operations to locate the Steam directory. Currently the supported
+	/// platforms are Windows, MacOS, and Linux while other platforms return an
+	/// [`LocateError::Unsupported`][error::LocateError::Unsupported]
     #[cfg(feature = "locate")]
-    pub fn locate() -> Result<SteamDir> {
+    pub fn locate() -> Result<Self> {
         let path = locate::locate_steam_dir()?;
 
         Self::from_dir(&path)
