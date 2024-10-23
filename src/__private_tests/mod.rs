@@ -9,3 +9,10 @@ mod wasm;
 
 pub type TestError = Box<dyn std::error::Error>;
 pub type TestResult = Result<(), TestError>;
+
+pub mod prelude {
+    pub use super::{
+        helpers::{expect_test_env, AppFile, SampleApp, TempLibrary, TempSteamDir},
+        TestError, TestResult,
+    };
+}
