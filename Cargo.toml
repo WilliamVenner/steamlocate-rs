@@ -1,14 +1,17 @@
 [package]
 name = "steamlocate"
 version = "2.0.0-beta.2"
-authors = ["William Venner <william@venner.io>"]
+authors = [
+    "William Venner <william@venner.io>",
+	"Cosmic <CosmicHorrorDev@pm.me>",
+]
 edition = "2021"
 repository = "https://github.com/WilliamVenner/steamlocate-rs"
 license = "MIT"
-description = "Rust Crate for locating Steam game installation directories (and Steam itself!)"
-readme = "README.md"
+description = "Crate for locating Steam game installation directories (and Steam itself!)"
 keywords = ["steam", "vdf", "appmanifest", "directory", "steamapps"]
-categories = ["os", "hardware-support", "filesystem", "accessibility"]
+categories = ["config", "filesystem"]
+rust-version = "1.70.0"
 
 [package.metadata.docs.rs]
 all-features = true
