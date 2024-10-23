@@ -26,7 +26,7 @@ impl<'library> Iter<'library> {
     }
 }
 
-impl<'library> Iterator for Iter<'library> {
+impl Iterator for Iter<'_> {
     type Item = Result<App>;
 
     fn next(&mut self) -> Option<Self::Item> {
