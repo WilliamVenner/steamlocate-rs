@@ -197,16 +197,13 @@ impl SteamDir {
     /// ```
     pub fn find_app(&self, app_id: u32) -> Result<Option<(App, Library)>> {
         // Search for the `app_id` in each library
-        match self.libraries() {
-            Err(e) => Err(e),
-            Ok(libraries) => libraries
-                .filter_map(|library| library.ok())
-                .find_map(|lib| {
-                    lib.app(app_id)
-                        .map(|maybe_app| maybe_app.map(|app| (app, lib)))
-                })
-                .transpose(),
-        }
+        self.libraries()?
+            .filter_map(|library| library.ok())
+            .find_map(|lib| {
+                lib.app(app_id)
+                    .map(|maybe_app| maybe_app.map(|app| (app, lib)))
+            })
+            .transpose()
     }
 
     pub fn compat_tool_mapping(&self) -> Result<HashMap<u32, CompatTool>> {
