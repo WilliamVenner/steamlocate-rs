@@ -162,6 +162,51 @@ pub struct SteamDir {
 }
 
 impl SteamDir {
+    /// Attempts to locate the Steam installation directory on the system
+    ///
+    ///
+    /// Uses platform specific operations to locate the Steam directory. Currently the supported
+    /// platforms are Windows, MacOS, and Linux while other platforms return an
+    /// [`LocateError::Unsupported`][error::LocateError::Unsupported]
+    ///
+    /// [See the struct docs][Self#example] for an example
+    #[cfg(feature = "locate")]
+    pub fn locate() -> Result<Self> {
+        let path = locate::locate_steam_dir()?;
+
+        Self::from_dir(&path)
+    }
+
+    /// Attempt to create a [`SteamDir`] from its installation directory
+    ///
+    /// When possible you should prefer using [`SteamDir::locate()`]
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use steamlocate::SteamDir;
+    /// # use steamlocate::__private_tests::prelude::*;
+    /// # let temp_steam_dir = expect_test_env();
+    /// # let steam_dir = temp_steam_dir.steam_dir();
+    /// # /*
+    /// let steam_dir = SteamDir::locate()?;
+    /// # */
+    /// let steam_path = steam_dir.path();
+    /// let still_steam_dir = SteamDir::from_dir(steam_path).expect("We just located it");
+    /// assert_eq!(still_steam_dir.path(), steam_path);
+    /// ```
+    pub fn from_dir(path: &Path) -> Result<Self> {
+        if !path.is_dir() {
+            return Err(Error::validation(ValidationError::missing_dir()));
+        }
+
+        // TODO(cosmic): should we do some kind of extra validation here? Could also use validation
+        // to determine if a steam dir has been uninstalled. Should fix all the flatpack/snap issues
+        Ok(Self {
+            path: path.to_owned(),
+        })
+    }
+
     /// The path to the Steam installation directory on this computer.
     ///
     /// Example: `C:\Program Files (x86)\Steam`
@@ -266,49 +311,5 @@ impl SteamDir {
     /// ```
     pub fn shortcuts(&self) -> Result<shortcut::Iter> {
         shortcut::Iter::new(&self.path)
-    }
-
-    /// Attempt to create a [`SteamDir`] from its installation directory
-    ///
-    /// When possible you should prefer using [`SteamDir::locate()`]
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use steamlocate::SteamDir;
-    /// # use steamlocate::__private_tests::prelude::*;
-    /// # let temp_steam_dir = expect_test_env();
-    /// # let steam_dir = temp_steam_dir.steam_dir();
-    /// # /*
-    /// let steam_dir = SteamDir::locate()?;
-    /// # */
-    /// let steam_path = steam_dir.path();
-    /// let still_steam_dir = SteamDir::from_dir(steam_path).expect("We just located it");
-    /// assert_eq!(still_steam_dir.path(), steam_path);
-    /// ```
-    pub fn from_dir(path: &Path) -> Result<Self> {
-        if !path.is_dir() {
-            return Err(Error::validation(ValidationError::missing_dir()));
-        }
-
-        // TODO(cosmic): should we do some kind of extra validation here? Could also use validation
-        // to determine if a steam dir has been uninstalled. Should fix all the flatpack/snap issues
-        Ok(Self {
-            path: path.to_owned(),
-        })
-    }
-
-    /// Attempts to locate the Steam installation directory on the system
-    ///
-    /// See the [example on the struct docs][Self#example]
-	///
-	/// Uses platform specific operations to locate the Steam directory. Currently the supported
-	/// platforms are Windows, MacOS, and Linux while other platforms return an
-	/// [`LocateError::Unsupported`][error::LocateError::Unsupported]
-    #[cfg(feature = "locate")]
-    pub fn locate() -> Result<Self> {
-        let path = locate::locate_steam_dir()?;
-
-        Self::from_dir(&path)
     }
 }
