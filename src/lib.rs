@@ -225,7 +225,7 @@ impl SteamDir {
     }
 
     /// Returns an iterator of all non-Steam games that were added to steam
-    pub fn shortcuts(&mut self) -> Result<shortcut::Iter> {
+    pub fn shortcuts(&self) -> Result<shortcut::Iter> {
         shortcut::Iter::new(&self.path)
     }
 
