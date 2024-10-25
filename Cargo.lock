@@ -326,7 +326,7 @@ checksum = "fa42c91313f1d05da9b26f267f931cf178d4aba455b4c4622dd7355eb80c6640"
 
 [[package]]
 name = "steamlocate"
-version = "2.0.0-beta.3"
+version = "2.0.0-beta.4"
 dependencies = [
  "crc",
  "home",
