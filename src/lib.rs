@@ -102,7 +102,6 @@ pub mod app;
 pub mod config;
 pub mod error;
 pub mod library;
-#[cfg(feature = "locate")]
 mod locate;
 pub mod shortcut;
 // NOTE: exposed publicly, so that we can use them in doctests
@@ -170,7 +169,6 @@ impl SteamDir {
     /// [`LocateError::Unsupported`][error::LocateError::Unsupported]
     ///
     /// [See the struct docs][Self#example] for an example
-    #[cfg(feature = "locate")]
     pub fn locate() -> Result<Self> {
         let path = locate::locate_steam_dir()?;
 

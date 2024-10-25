@@ -16,7 +16,6 @@ fn locate_steam_dir_helper() -> Result<PathBuf> {
 fn locate_steam_dir_helper() -> Result<PathBuf> {
     use crate::error::{Error, LocateError};
 
-    use locate_backend as winreg;
     use winreg::{
         enums::{HKEY_LOCAL_MACHINE, KEY_READ},
         RegKey,
@@ -49,7 +48,6 @@ fn locate_steam_dir_helper() -> Result<PathBuf> {
 #[cfg(target_os = "macos")]
 fn locate_steam_dir_helper() -> Result<PathBuf> {
     use crate::{error::LocateError, Error};
-    use locate_backend as home;
     // Steam's installation location is pretty easy to find on macOS, as it's always in
     // $USER/Library/Application Support
     let home_dir = home::home_dir().ok_or_else(|| Error::locate(LocateError::no_home()))?;
@@ -64,8 +62,6 @@ fn locate_steam_dir_helper() -> Result<PathBuf> {
     use std::env;
 
     use crate::error::{Error, LocateError, ValidationError};
-
-    use locate_backend as home;
 
     // Steam's installation location is pretty easy to find on Linux, too, thanks to the symlink in $USER
     let home_dir = home::home_dir().ok_or_else(|| Error::locate(LocateError::no_home()))?;

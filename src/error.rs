@@ -53,7 +53,6 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 
 impl Error {
-    #[cfg(feature = "locate")]
     pub(crate) fn locate(locate: LocateError) -> Self {
         Self::FailedLocate(locate)
     }
@@ -85,14 +84,14 @@ pub enum LocateError {
 }
 
 impl LocateError {
-    #[cfg(all(feature = "locate", target_os = "windows"))]
+    #[cfg(target_os = "windows")]
     pub(crate) fn winreg(io: io::Error) -> Self {
         Self::Backend(BackendError {
             inner: BackendErrorInner(std::sync::Arc::new(io)),
         })
     }
 
-    #[cfg(all(feature = "locate", not(target_os = "windows")))]
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     pub(crate) fn no_home() -> Self {
         Self::Backend(BackendError {
             inner: BackendErrorInner::NoHome,
@@ -111,24 +110,24 @@ impl fmt::Display for LocateError {
 
 #[derive(Clone, Debug)]
 pub struct BackendError {
-    #[cfg(feature = "locate")]
+    #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
     #[allow(dead_code)] // Only used for displaying currently
     inner: BackendErrorInner,
 }
 
 impl fmt::Display for BackendError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        #[cfg(all(feature = "locate", target_os = "windows"))]
+        #[cfg(target_os = "windows")]
         {
             write!(f, "{}", self.inner.0)
         }
-        #[cfg(all(feature = "locate", not(target_os = "windows")))]
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
         {
             match self.inner {
                 BackendErrorInner::NoHome => f.write_str("Unable to locate the user's $HOME"),
             }
         }
-        #[cfg(not(feature = "locate"))]
+        #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
         {
             // "Use" the unused value
             let _ = f;
@@ -140,10 +139,10 @@ impl fmt::Display for BackendError {
 // TODO: move all this conditional junk into different modules, so that I don't have to keep
 // repeating it everywhere
 #[derive(Clone, Debug)]
-#[cfg(all(feature = "locate", target_os = "windows"))]
+#[cfg(target_os = "windows")]
 struct BackendErrorInner(std::sync::Arc<io::Error>);
 #[derive(Clone, Debug)]
-#[cfg(all(feature = "locate", not(target_os = "windows")))]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 enum BackendErrorInner {
     NoHome,
 }
