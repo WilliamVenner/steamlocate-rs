@@ -24,14 +24,6 @@ Simply add `steamlocate` using
 $ cargo add steamlocate
 ```
 
-## Feature flags
-
-Default: `locate`
-
-| Feature flag | Description |
-| :---: | :--- |
-| `locate` | Enables automatically detecting the Steam installation on supported platforms (currently Windows, MacOS, and Linux). Unsupported platforms will return a runtime error. |
-
 # Examples
 
 ## Locate the Steam installation and a specific game
