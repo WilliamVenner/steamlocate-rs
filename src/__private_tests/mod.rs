@@ -12,7 +12,9 @@ pub type TestResult = Result<(), TestError>;
 
 pub mod prelude {
     pub use super::{
-        helpers::{expect_test_env, AppFile, SampleApp, TempLibrary, TempSteamDir},
+        helpers::{
+            expect_test_env, AppFile, SampleApp, SampleShortcuts, TempLibrary, TempSteamDir,
+        },
         TestError, TestResult,
     };
 }

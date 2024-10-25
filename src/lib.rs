@@ -224,7 +224,24 @@ impl SteamDir {
         Ok(store.software.valve.steam.mapping)
     }
 
-    /// Returns an iterator of all non-Steam games that were added to steam
+    /// Returns an [`Iterator`] of all [`Shortcut`]s aka non-Steam games that were added to steam
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use steamlocate::__private_tests::prelude::*;
+    /// # let moonlighter = SampleShortcuts::JustGogMoonlighter;
+    /// # let temp_steam_dir: TempSteamDir = moonlighter.try_into()?;
+    /// # let steam_dir = temp_steam_dir.steam_dir();
+    /// # /*
+    /// let steam_dir = SteamDir::locate()?;
+    /// # */
+    /// let mut shortcuts_iter = steam_dir.shortcuts()?;
+    /// let moonlighter = shortcuts_iter.next().unwrap()?;
+    /// assert_eq!(moonlighter.app_name, "Moonlighter");
+    /// assert!(moonlighter.executable.ends_with("Moonlighter/start.sh\""));
+    /// # Ok::<_, TestError>(())
+    /// ```
     pub fn shortcuts(&self) -> Result<shortcut::Iter> {
         shortcut::Iter::new(&self.path)
     }
