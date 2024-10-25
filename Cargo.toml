@@ -3,7 +3,7 @@ name = "steamlocate"
 version = "2.0.0-beta.2"
 authors = [
     "William Venner <william@venner.io>",
-	"Cosmic <CosmicHorrorDev@pm.me>",
+    "Cosmic <CosmicHorrorDev@pm.me>",
 ]
 edition = "2021"
 repository = "https://github.com/WilliamVenner/steamlocate-rs"
