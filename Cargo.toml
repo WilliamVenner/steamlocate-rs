@@ -1,6 +1,6 @@
 [package]
 name = "steamlocate"
-version = "2.0.0-beta.4"
+version = "2.0.0"
 authors = [
     "William Venner <william@venner.io>",
     "Cosmic <CosmicHorrorDev@pm.me>",
