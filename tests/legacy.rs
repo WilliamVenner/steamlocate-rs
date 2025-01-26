@@ -7,7 +7,7 @@ static GMOD_ID: u32 = SampleApp::GarrysMod.id();
 fn find_library_folders() -> TestResult {
     let tmp_steam_dir = expect_test_env();
     let steam_dir = tmp_steam_dir.steam_dir();
-    assert!(steam_dir.libraries().unwrap().len() > 1);
+    assert!(steam_dir.libraries()?.len() > 1);
     Ok(())
 }
 
@@ -15,7 +15,7 @@ fn find_library_folders() -> TestResult {
 fn find_app() -> TestResult {
     let tmp_steam_dir = expect_test_env();
     let steam_dir = tmp_steam_dir.steam_dir();
-    let steam_app = steam_dir.find_app(GMOD_ID).unwrap();
+    let steam_app = steam_dir.find_app(GMOD_ID)?;
     assert_eq!(steam_app.unwrap().0.app_id, GMOD_ID);
     Ok(())
 }
@@ -33,17 +33,15 @@ fn app_details() -> TestResult {
 fn all_apps() -> TestResult {
     let tmp_steam_dir = expect_test_env();
     let steam_dir = tmp_steam_dir.steam_dir();
-    let mut libraries = steam_dir.libraries().unwrap();
-    let all_apps: Vec<_> = libraries
-        .try_fold(Vec::new(), |mut acc, maybe_library| {
-            let library = maybe_library?;
-            for maybe_app in library.apps() {
-                let app = maybe_app?;
-                acc.push(app);
-            }
-            Ok::<_, Error>(acc)
-        })
-        .unwrap();
+    let mut libraries = steam_dir.libraries()?;
+    let all_apps: Vec<_> = libraries.try_fold(Vec::new(), |mut acc, maybe_library| {
+        let library = maybe_library?;
+        for maybe_app in library.apps() {
+            let app = maybe_app?;
+            acc.push(app);
+        }
+        Ok::<_, Error>(acc)
+    })?;
     assert!(all_apps.len() > 1);
     Ok(())
 }
@@ -53,21 +51,19 @@ fn all_apps_get_one() -> TestResult {
     let tmp_steam_dir = expect_test_env();
     let steam_dir = tmp_steam_dir.steam_dir();
 
-    let mut libraries = steam_dir.libraries().unwrap();
-    let all_apps: Vec<_> = libraries
-        .try_fold(Vec::new(), |mut acc, maybe_library| {
-            let library = maybe_library?;
-            for maybe_app in library.apps() {
-                let app = maybe_app?;
-                acc.push(app);
-            }
-            Ok::<_, Error>(acc)
-        })
-        .unwrap();
+    let mut libraries = steam_dir.libraries()?;
+    let all_apps: Vec<_> = libraries.try_fold(Vec::new(), |mut acc, maybe_library| {
+        let library = maybe_library?;
+        for maybe_app in library.apps() {
+            let app = maybe_app?;
+            acc.push(app);
+        }
+        Ok::<_, Error>(acc)
+    })?;
     assert!(!all_apps.is_empty());
     assert!(all_apps.len() > 1);
 
-    let steam_app = steam_dir.find_app(GMOD_ID).unwrap().unwrap();
+    let steam_app = steam_dir.find_app(GMOD_ID)?.unwrap();
     assert_eq!(
         all_apps
             .into_iter()
