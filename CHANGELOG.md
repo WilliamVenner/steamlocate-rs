@@ -1,4 +1,22 @@
-## 2.0.0
+# 2.0.1
+
+Just a small release to keep things up to date
+
+## Documentation
+
+- Add a changelog #89
+
+## Dependencies
+
+- Update `winreg` from 0.52 -> 0.55 #86
+
+## Internal
+
+- Make tests into into integration tests where possible #87
+- Remove publish workflow #88
+- Add a release checklist #90
+
+# 2.0.0
 
 Finally after a _very_ long development period we're release version 2.0.0. Living up to the major version bump this release does involve breaking changes to most parts of the API. The majority of these changes fit into three core
 themes:
