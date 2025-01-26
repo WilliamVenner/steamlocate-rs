@@ -1,8 +1,5 @@
-use super::{
-    helpers::{expect_test_env, SampleApp},
-    TestResult,
-};
-use crate::Error;
+use steamlocate::Error;
+use steamlocate::__private_tests::prelude::*;
 
 static GMOD_ID: u32 = SampleApp::GarrysMod.id();
 
