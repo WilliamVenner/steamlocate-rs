@@ -1,7 +1,4 @@
-use super::{
-    helpers::{SampleApp, TempSteamDir},
-    TestResult,
-};
+use steamlocate::__private_tests::prelude::*;
 
 // Context: https://github.com/WilliamVenner/steamlocate-rs/issues/58
 #[test]
