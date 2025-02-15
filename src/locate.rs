@@ -92,12 +92,17 @@ fn locate_steam_dir_helper() -> Result<Vec<PathBuf>> {
         home_dir.join(".local/share/Steam"),
         home_dir.join(".steam/steam"),
         home_dir.join(".steam/root"),
-        home_dir.join(".steam"),
         // Snap steam install directories
         snap_dir.join("steam/common/.local/share/Steam"),
         snap_dir.join("steam/common/.steam/steam"),
         snap_dir.join("steam/common/.steam/root"),
     ];
-
-    Ok(steam_paths.into_iter().filter(|x| x.is_dir()).collect())
+    let mut existing_paths: Vec<PathBuf> = steam_paths
+        .into_iter()
+        .map(|path| path.read_link().unwrap_or(path))
+        .filter(|x| x.is_dir())
+        .collect();
+    existing_paths.sort();
+    existing_paths.dedup();
+    Ok(existing_paths)
 }

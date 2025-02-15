@@ -250,10 +250,7 @@ impl SteamDir {
 
     #[cfg(feature = "locate")]
     pub fn locate_multiple() -> Result<Vec<SteamDir>> {
-        let paths = locate::locate_steam_dir()?;
-        if paths.is_empty() {
-            return Err(Error::validation(ValidationError::missing_dir()));
-        }
+        let paths = locate::locate_steam_dir()?;    
         let mapped_paths: Result<Vec<SteamDir>> =
             paths.iter().map(|item| Self::from_dir(item)).collect();
         return mapped_paths;
