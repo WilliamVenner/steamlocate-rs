@@ -1,22 +1,20 @@
 [package]
 name = "steamlocate"
-version = "2.0.0-beta.2"
-authors = ["William Venner <william@venner.io>"]
-edition = "2018"
+version = "2.0.1"
+authors = [
+    "William Venner <william@venner.io>",
+    "Cosmic <CosmicHorrorDev@pm.me>",
+]
+edition = "2021"
 repository = "https://github.com/WilliamVenner/steamlocate-rs"
 license = "MIT"
-description = "Rust Crate for locating Steam game installation directories (and Steam itself!)"
-readme = "README.md"
+description = "Crate for locating Steam game installation directories (and Steam itself!)"
 keywords = ["steam", "vdf", "appmanifest", "directory", "steamapps"]
-categories = ["os", "hardware-support", "filesystem", "accessibility"]
+categories = ["config", "filesystem"]
+rust-version = "1.70.0"
 
 [package.metadata.docs.rs]
-all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
-
-[features]
-default = ["locate"]
-locate = ["locate_backend"]
 
 [dependencies]
 crc = "3.0"
@@ -26,9 +24,9 @@ serde = { version = "1.0.0", features = ["derive"] }
 
 # Platform-specific dependencies used for locating the steam dir
 [target."cfg(target_os=\"windows\")".dependencies]
-locate_backend = { package = "winreg", version = "0.51", optional = true }
-[target."cfg(not(target_os=\"windows\"))".dependencies]
-locate_backend = { package = "dirs", version = "5", optional = true }
+winreg = "0.55.0"
+[target."cfg(any(target_os=\"macos\", target_os=\"linux\"))".dependencies]
+home = "0.5.9"
 
 [dev-dependencies]
 insta = { version = "1.34.0", features = ["ron"] }
@@ -36,12 +34,9 @@ wasm-bindgen-test = "0.3.39"
 
 [[example]]
 name = "appmanifest"
-required-features = ["locate"]
 
 [[example]]
 name = "overview"
-required-features = ["locate"]
 
 [[example]]
 name = "shortcuts"
-required-features = ["locate"]

@@ -12,7 +12,10 @@ use crate::{
     Error, Result,
 };
 
-/// A added non-Steam game
+// TODO: refactor this to remove storing the `steam_id` and instead make it a method that
+// calculates on demand. That fixes some API issues and more directly represents the underlying
+// data. This also means that `fn new()` can be removed
+/// A non-Steam game that has been added to Steam
 ///
 /// Information is parsed from your `userdata/<user_id>/config/shortcuts.vdf` files
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -28,36 +31,38 @@ pub struct Shortcut {
     pub executable: String,
     /// The directory that the application should be run in
     pub start_dir: String,
-    /// The shortcut's Steam ID calculated from the executable path and app name
-    pub steam_id: u64,
 }
 
 impl Shortcut {
     /// Calculates the shortcut's Steam ID from the executable and app name
     pub fn new(app_id: u32, app_name: String, executable: String, start_dir: String) -> Self {
-        fn calculate_steam_id(executable: &[u8], app_name: &[u8]) -> u64 {
-            let algorithm = crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
-
-            let mut digest = algorithm.digest();
-            digest.update(executable);
-            digest.update(app_name);
-
-            let top = digest.finalize() | 0x80000000;
-            ((top as u64) << 32) | 0x02000000
-        }
-
-        let steam_id = calculate_steam_id(executable.as_bytes(), app_name.as_bytes());
-
         Self {
             app_id,
             app_name,
             executable,
             start_dir,
-            steam_id,
         }
+    }
+
+    /// The shortcut's Steam ID calculated from the executable path and app name
+    pub fn steam_id(&self) -> u64 {
+        let executable = self.executable.as_bytes();
+        let app_name = self.app_name.as_bytes();
+
+        let algorithm = crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
+
+        let mut digest = algorithm.digest();
+        digest.update(executable);
+        digest.update(app_name);
+
+        let top = digest.finalize() | 0x80000000;
+        ((top as u64) << 32) | 0x02000000
     }
 }
 
+/// An [`Iterator`] over a Steam installation's [`Shortcut`]s
+///
+/// Returned from calling [`SteamDir::shortcuts()`][super::SteamDir::shortcuts]
 pub struct Iter {
     dir: PathBuf,
     read_dir: fs::ReadDir,
@@ -231,23 +236,28 @@ mod tests {
                     app_name: "Anki".into(),
                     executable: "\"anki\"".into(),
                     start_dir: "\"./\"".into(),
-                    steam_id: 0xe89614fe02000000,
                 },
                 Shortcut {
                     app_id: 2492174738,
                     app_name: "LibreOffice Calc".into(),
                     executable: "\"libreoffice\"".into(),
                     start_dir: "\"./\"".into(),
-                    steam_id: 0xdb01c79902000000,
                 },
                 Shortcut {
                     app_id: 3703025501,
                     app_name: "foo.sh".into(),
                     executable: "\"/usr/local/bin/foo.sh\"".into(),
                     start_dir: "\"/usr/local/bin/\"".into(),
-                    steam_id: 0x9d55017302000000,
                 }
             ],
+        );
+        let steam_ids: Vec<_> = shortcuts
+            .iter()
+            .map(|shortcut| shortcut.steam_id())
+            .collect();
+        assert_eq!(
+            steam_ids,
+            [0xe89614fe02000000, 0xdb01c79902000000, 0x9d55017302000000,]
         );
 
         let contents = include_bytes!("../tests/sample_data/shortcuts_different_key_case.vdf");
@@ -259,7 +269,6 @@ mod tests {
                 app_name: "Second Life".into(),
                 executable: "\"/Applications/Second Life Viewer.app\"".into(),
                 start_dir: "\"/Applications/\"".into(),
-                steam_id: 0xfdd972df02000000,
             }]
         );
     }

@@ -1,7 +1,7 @@
 [![crates.io](https://img.shields.io/crates/v/steamlocate.svg)](https://crates.io/crates/steamlocate)
 [![docs.rs](https://docs.rs/steamlocate/badge.svg)](https://docs.rs/steamlocate/)
 [![license](https://img.shields.io/crates/l/steamlocate)](https://github.com/WilliamVenner/steamlocate/blob/master/LICENSE)
-[![Workflow Status](https://github.com/WilliamVenner/steamlocate-rs/workflows/build/badge.svg)](https://github.com/WilliamVenner/steamlocate-rs/actions?query=workflow%3A%22build%22)
+[![Workflow Status](https://github.com/WilliamVenner/steamlocate-rs/workflows/ci/badge.svg)](https://github.com/WilliamVenner/steamlocate-rs/actions?query=workflow%3A%22ci%22)
 
 # steamlocate
 
@@ -23,14 +23,6 @@ Simply add `steamlocate` using
 ```console
 $ cargo add steamlocate
 ```
-
-## Feature flags
-
-Default: `locate`
-
-| Feature flag | Description |
-| :---: | :--- |
-| `locate` | Enables automatically detecting the Steam installation on supported platforms (currently Windows, MacOS, and Linux). Unsupported platforms will return a runtime error. |
 
 # Examples
 

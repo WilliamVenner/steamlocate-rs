@@ -3,7 +3,7 @@ name: ci
 on:
   push:
     branches:
-      - "*"
+      - master
   pull_request:
 
 env:
@@ -17,7 +17,7 @@ jobs:
         toolchain: [stable, beta]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install ${{ matrix.toolchain }} toolchain
         uses: dtolnay/rust-toolchain@master
         with:
@@ -39,12 +39,10 @@ jobs:
   wasm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Install wasm-pack
         uses: taiki-e/install-action@wasm-pack
-      - name: Run wasm tests (`--no-default-features`)
-        run: wasm-pack test --node --no-default-features
-      - name: Run wasm tests (`--all-features`)
-        run: wasm-pack test --node --all-features
+      - name: Run wasm tests
+        run: wasm-pack test --node

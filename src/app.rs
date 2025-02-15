@@ -1,3 +1,17 @@
+//! All of the data available from parsing [App] manifest files
+//!
+//! This contains the definition of [`App`] and all of the types used within it
+//!
+//! Fundamentally an [`App`] is contained within a [`Library`], but there are a variety of helpers
+//! that make locating an app easier. Namely:
+//!
+//! - [SteamDir::find_app()][crate::SteamDir::find_app]
+//!   - Searches through all of the libraries to locate an app by ID
+//! - [Library::app()]
+//!   - Searches this specific library for an app by ID
+//! - [Library::apps()]
+//!   - Iterates over all of the apps contained in this library
+
 use std::{
     collections::BTreeMap,
     fs,
@@ -12,6 +26,9 @@ use crate::{
 
 use serde::{Deserialize, Deserializer};
 
+/// An [`Iterator`] over a [`Library`]'s [`App`]s
+///
+/// Returned from calling [`Library::apps()`]
 pub struct Iter<'library> {
     library: &'library Library,
     app_ids: slice::Iter<'library, u32>,
@@ -26,7 +43,7 @@ impl<'library> Iter<'library> {
     }
 }
 
-impl<'library> Iterator for Iter<'library> {
+impl Iterator for Iter<'_> {
     type Item = Result<App>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -41,6 +58,55 @@ impl<'library> Iterator for Iter<'library> {
 }
 
 /// Metadata for an installed Steam app
+///
+/// _See the [module level docs][self] for different ways to get an [`App`]_
+///
+/// All of the information contained within the `appmanifest_<APP_ID>.acf` file. For instance
+///
+/// ```vdf
+/// "AppState"
+/// {
+///     "appid"        "599140"
+///     "installdir"        "Graveyard Keeper"
+///     "name"        "Graveyard Keeper"
+///     "LastOwner"        "12312312312312312"
+///     "Universe"        "1"
+///     "StateFlags"        "6"
+///     "LastUpdated"        "1672176869"
+///     "UpdateResult"        "0"
+///     "SizeOnDisk"        "1805798572"
+///     "buildid"        "8559806"
+///     "BytesToDownload"        "24348080"
+///     "BytesDownloaded"        "0"
+///     "TargetBuildID"        "8559806"
+///     "AutoUpdateBehavior"        "1"
+/// }
+/// ```
+///
+/// gets parsed as
+///
+/// ```ignore
+/// App {
+///     app_id: 599140,
+///     install_dir: "Graveyard Keeper",
+///     name: Some("Graveyard Keeper"),
+///     last_user: Some(12312312312312312),
+///     universe: Some(Public),
+///     state_flags: Some(StateFlags(6)),
+///     last_updated: Some(SystemTime {
+///         tv_sec: 1672176869,
+///         tv_nsec: 0,
+///     }),
+///     update_result: Some(0),
+///     size_on_disk: Some(1805798572),
+///     build_id: Some(8559806),
+///     bytes_to_download: Some(24348080),
+///     bytes_downloaded: Some(0),
+///     target_build_id: Some(8559806),
+///     auto_update_behavior: Some(OnlyUpdateOnLaunch),
+///     // ...
+/// }
+/// ```
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[cfg_attr(test, derive(serde::Serialize))]
 #[non_exhaustive]
@@ -65,7 +131,7 @@ pub struct App {
     pub universe: Option<Universe>,
     pub launcher_path: Option<PathBuf>,
     pub state_flags: Option<StateFlags>,
-    // TODO: Need to handle this for serializing too before `App` can `impl Serialize`
+    // NOTE: Need to handle this for serializing too before `App` can `impl Serialize`
     #[serde(
         alias = "lastupdated",
         default,
@@ -163,14 +229,8 @@ impl StateFlags {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct StateFlagIter(Option<StateFlagIterInner>);
-
-impl StateFlagIter {
-    fn from_valid(valid: ValidIter) -> Self {
-        Self(Some(StateFlagIterInner::Valid(valid)))
-    }
-}
 
 impl From<StateFlags> for StateFlagIter {
     fn from(state: StateFlags) -> Self {
@@ -186,22 +246,21 @@ impl Iterator for StateFlagIter {
         // - None indicates the iterator is done (trap state)
         // - Invalid will emit invalid once and finish
         // - Valid will pull on the inner iterator till it's finished
-        let current = std::mem::take(self);
-        let (next, ret) = match current.0? {
-            StateFlagIterInner::Invalid => (Self::default(), StateFlag::Invalid),
+        let current = std::mem::take(&mut self.0);
+        let (next, ret) = match current? {
+            StateFlagIterInner::Invalid => (None, StateFlag::Invalid),
             StateFlagIterInner::Valid(mut valid) => {
                 let ret = valid.next()?;
-                (Self::from_valid(valid), ret)
+                (Some(StateFlagIterInner::Valid(valid)), ret)
             }
         };
-        *self = next;
+        self.0 = next;
         Some(ret)
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 enum StateFlagIterInner {
-    #[default]
     Invalid,
     Valid(ValidIter),
 }
@@ -337,12 +396,6 @@ impl From<u64> for AllowOtherDownloadsWhileRunning {
     }
 }
 
-impl Default for AllowOtherDownloadsWhileRunning {
-    fn default() -> Self {
-        Self::UseGlobalSetting
-    }
-}
-
 impl_deserialize_from_u64!(AllowOtherDownloadsWhileRunning);
 
 #[derive(Debug, Clone, PartialEq)]
@@ -362,13 +415,6 @@ impl From<u64> for AutoUpdateBehavior {
             2 => Self::UpdateWithHighPriority,
             unknown => Self::Unknown(unknown),
         }
-    }
-}
-
-// TODO: Maybe don't have these defaults?
-impl Default for AutoUpdateBehavior {
-    fn default() -> Self {
-        Self::KeepUpToDate
     }
 }
 

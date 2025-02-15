@@ -1,18 +1,13 @@
 //! Some test helpers for setting up isolated dummy steam installations.
 
-// TODO: add a test with an env var flag that runs against your real local steam installation?
-
 use std::{
     collections::BTreeMap,
-    convert::{TryFrom, TryInto},
     fs, iter,
     path::{Path, PathBuf},
 };
 
-use crate::{
-    tests::{temp::TempDir, TestError},
-    SteamDir,
-};
+use super::{temp::TempDir, TestError};
+use crate::SteamDir;
 
 use serde::Serialize;
 
@@ -47,6 +42,14 @@ impl TryFrom<SampleApp> for TempSteamDir {
     }
 }
 
+impl TryFrom<SampleShortcuts> for TempSteamDir {
+    type Error = TestError;
+
+    fn try_from(sample_shortcuts: SampleShortcuts) -> Result<Self, Self::Error> {
+        Self::builder().shortcuts(sample_shortcuts).finish()
+    }
+}
+
 impl TempSteamDir {
     pub fn builder() -> TempSteamDirBuilder {
         TempSteamDirBuilder::default()
@@ -60,11 +63,17 @@ impl TempSteamDir {
 #[derive(Default)]
 #[must_use]
 pub struct TempSteamDirBuilder {
+    shortcuts: Option<SampleShortcuts>,
     libraries: Vec<TempLibrary>,
     apps: Vec<AppFile>,
 }
 
 impl TempSteamDirBuilder {
+    pub fn shortcuts(mut self, shortcuts: SampleShortcuts) -> Self {
+        self.shortcuts = Some(shortcuts);
+        self
+    }
+
     pub fn app(mut self, app: AppFile) -> Self {
         self.apps.push(app);
         self
@@ -77,22 +86,36 @@ impl TempSteamDirBuilder {
 
     // Steam dir is also a library, but is laid out slightly differently than a regular library
     pub fn finish(self) -> Result<TempSteamDir, TestError> {
+        let Self {
+            shortcuts,
+            libraries,
+            apps,
+        } = self;
+
         let tmp = TempDir::new()?;
         let root_dir = tmp.path().join("test-steam-dir");
         let steam_dir = root_dir.join("Steam");
         let apps_dir = steam_dir.join("steamapps");
         fs::create_dir_all(&apps_dir)?;
+        let shortcuts_dir = steam_dir.join("userdata").join("123123123").join("config");
+        fs::create_dir_all(&shortcuts_dir)?;
 
-        setup_steamapps_dir(&apps_dir, &self.apps)?;
+        if let Some(shortcuts) = shortcuts {
+            let data = shortcuts.data();
+            let shortcuts_file = shortcuts_dir.join("shortcuts.vdf");
+            fs::write(&shortcuts_file, data)?;
+        }
+
+        setup_steamapps_dir(&apps_dir, &apps)?;
 
         let steam_dir_content_id = i32::MIN;
-        let apps = self.apps.iter().map(|app| (app.id, 0)).collect();
+        let apps = apps.iter().map(|app| (app.id, 0)).collect();
         let root_library =
             LibraryFolder::mostly_default(steam_dir.clone(), steam_dir_content_id, apps);
-        setup_libraryfolders_file(&apps_dir, root_library, &self.libraries)?;
+        setup_libraryfolders_file(&apps_dir, root_library, &libraries)?;
 
         let tmps = iter::once(tmp)
-            .chain(self.libraries.into_iter().map(|library| library._tmp))
+            .chain(libraries.into_iter().map(|library| library._tmp))
             .collect();
 
         Ok(TempSteamDir {
@@ -302,10 +325,24 @@ impl SampleApp {
     }
 }
 
+pub enum SampleShortcuts {
+    JustGogMoonlighter,
+}
+
+impl SampleShortcuts {
+    pub const fn data(&self) -> &'static [u8] {
+        match self {
+            Self::JustGogMoonlighter => {
+                include_bytes!("../../tests/sample_data/shortcuts_just_gog_moonlighter.vdf")
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::tests::TestResult;
+    use crate::__private_tests::TestResult;
 
     #[test]
     fn sanity() -> TestResult {
