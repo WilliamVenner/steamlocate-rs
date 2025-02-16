@@ -11,7 +11,7 @@ pub fn locate_steam_dir() -> Result<Vec<PathBuf>> {
         match result {
             Ok(path) => Ok(vec![path]),
             Err(e) => Err(e),
-        };
+        }
     }
 }
 
