@@ -9,8 +9,8 @@ pub fn locate_steam_dir() -> Result<Vec<PathBuf>> {
     {
         let result = locate_steam_dir_helper();
         match result {
-            Ok(path) => return Ok(vec![path]),
-            Err(e) => return Err(e),
+            Ok(path) => Ok(vec![path]),
+            Err(e) => Err(e),
         };
     }
 }
