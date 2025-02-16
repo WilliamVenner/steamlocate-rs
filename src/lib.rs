@@ -168,10 +168,10 @@ impl SteamDir {
     }
 
     pub fn locate_multiple() -> Result<Vec<SteamDir>> {
-        let paths = locate::locate_steam_dir()?;    
+        let paths = locate::locate_steam_dir()?;
         let mapped_paths: Result<Vec<SteamDir>> =
             paths.iter().map(|item| Self::from_dir(item)).collect();
-        return mapped_paths;
+        mapped_paths
     }
 
     /// Attempt to create a [`SteamDir`] from its installation directory

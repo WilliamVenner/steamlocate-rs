@@ -70,7 +70,7 @@ fn locate_steam_dir_helper() -> Result<PathBuf> {
 fn locate_steam_dir_helper() -> Result<Vec<PathBuf>> {
     use std::env;
 
-    use crate::error::{Error, LocateError, ValidationError};
+    use crate::error::{Error, LocateError};
 
     // Steam's installation location is pretty easy to find on Linux, too, thanks to the symlink in $USER
     let home_dir = home::home_dir().ok_or_else(|| Error::locate(LocateError::no_home()))?;
