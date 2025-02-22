@@ -163,8 +163,9 @@ impl SteamDir {
     /// [See the struct docs][Self#example] for an example
     pub fn locate() -> Result<Self> {
         let paths = locate::locate_steam_dir()?;
-
-        Self::from_dir(&paths[0])
+        let path = paths.first()
+            .ok_or(error::Error::InvalidSteamDir(ValidationError::missing_dir()))?;
+        Self::from_dir(path)
     }
 
     pub fn locate_multiple() -> Result<Vec<SteamDir>> {
