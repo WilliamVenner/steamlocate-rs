@@ -4,14 +4,12 @@ use crate::Result;
 
 pub fn locate_steam_dir() -> Result<Vec<PathBuf>> {
     #[cfg(target_os = "linux")]
-    return locate_steam_dir_helper();
+    {
+        locate_steam_dir_helper()
+    }
     #[cfg(not(target_os = "linux"))]
     {
-        let result = locate_steam_dir_helper();
-        match result {
-            Ok(path) => Ok(vec![path]),
-            Err(e) => Err(e),
-        }
+        locate_steam_dir_helper().map(|path| vec![path])
     }
 }
 
