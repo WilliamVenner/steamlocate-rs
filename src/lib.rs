@@ -162,9 +162,18 @@ impl SteamDir {
     ///
     /// [See the struct docs][Self#example] for an example
     pub fn locate() -> Result<Self> {
-        let path = locate::locate_steam_dir()?;
+        let paths = locate::locate_steam_dir()?;
+        let path = paths
+            .first()
+            .ok_or(error::Error::InvalidSteamDir(ValidationError::missing_dir()))?;
+        Self::from_dir(path)
+    }
 
-        Self::from_dir(&path)
+    pub fn locate_multiple() -> Result<Vec<SteamDir>> {
+        let paths = locate::locate_steam_dir()?;
+        let mapped_paths: Result<Vec<SteamDir>> =
+            paths.iter().map(|item| Self::from_dir(item)).collect();
+        mapped_paths
     }
 
     /// Attempt to create a [`SteamDir`] from its installation directory
