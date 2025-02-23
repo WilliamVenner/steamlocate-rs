@@ -66,7 +66,7 @@ fn locate_steam_dir_helper() -> Result<PathBuf> {
 
 #[cfg(target_os = "linux")]
 fn locate_steam_dir_helper() -> Result<Vec<PathBuf>> {
-    use std::env;
+    use std::{collections::BTreeSet, env};
 
     use crate::error::{Error, LocateError};
 
@@ -77,7 +77,8 @@ fn locate_steam_dir_helper() -> Result<Vec<PathBuf>> {
         Err(_) => home_dir.join("snap"),
     };
 
-    let steam_paths = vec![
+    let mut path_deduper = BTreeSet::new();
+    let unique_paths = [
         // Flatpak steam install directories
         home_dir.join(".var/app/com.valvesoftware.Steam/.local/share/Steam"),
         home_dir.join(".var/app/com.valvesoftware.Steam/.steam/steam"),
@@ -90,13 +91,13 @@ fn locate_steam_dir_helper() -> Result<Vec<PathBuf>> {
         snap_dir.join("steam/common/.local/share/Steam"),
         snap_dir.join("steam/common/.steam/steam"),
         snap_dir.join("steam/common/.steam/root"),
-    ];
-    let mut existing_paths: Vec<PathBuf> = steam_paths
-        .into_iter()
-        .map(|path| path.read_link().unwrap_or(path))
-        .filter(|x| x.is_dir())
-        .collect();
-    existing_paths.sort();
-    existing_paths.dedup();
-    Ok(existing_paths)
+    ]
+    .into_iter()
+    .filter(|path| path.is_dir())
+    .filter_map(|path| {
+        let resolved_path = path.read_link().unwrap_or_else(|_| path.clone());
+        path_deduper.insert(resolved_path.clone()).then_some(path)
+    })
+    .collect();
+    Ok(unique_paths)
 }
