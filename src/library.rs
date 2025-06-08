@@ -196,7 +196,7 @@ impl Library {
             let manifest_path = self
                 .path()
                 .join("steamapps")
-                .join(format!("appmanifest_{}.acf", id));
+                .join(format!("appmanifest_{id}.acf"));
             App::new(&manifest_path)
         })
     }
