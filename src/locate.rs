@@ -87,6 +87,7 @@ fn locate_steam_dir_helper() -> Result<Vec<PathBuf>> {
         home_dir.join(".local/share/Steam"),
         home_dir.join(".steam/steam"),
         home_dir.join(".steam/root"),
+        home_dir.join(".steam/debian-installation"),
         // Snap steam install directories
         snap_dir.join("steam/common/.local/share/Steam"),
         snap_dir.join("steam/common/.steam/steam"),
