@@ -44,7 +44,7 @@ impl fmt::Display for Error {
                 path.display(),
             ),
             Self::MissingExpectedApp { app_id } => {
-                write!(f, "Missing expected app with id: {}", app_id)
+                write!(f, "Missing expected app with id: {app_id}")
             }
         }
     }
@@ -210,8 +210,8 @@ pub(crate) enum ParseErrorInner {
 impl fmt::Display for ParseErrorInner {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Parse(err) => write!(f, "{}", err),
-            Self::Serde(err) => write!(f, "{}", err),
+            Self::Parse(err) => write!(f, "{err}"),
+            Self::Serde(err) => write!(f, "{err}"),
             Self::UnexpectedStructure => f.write_str("File did not match expected structure"),
             Self::Missing => f.write_str("Expected file was missing"),
         }
