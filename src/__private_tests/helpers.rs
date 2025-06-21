@@ -9,7 +9,7 @@ use std::{
 use super::{temp::TempDir, TestError};
 use crate::SteamDir;
 
-use serde::Serialize;
+use serde_derive::Serialize;
 
 pub fn expect_test_env() -> TempSteamDir {
     TempSteamDir::builder()
