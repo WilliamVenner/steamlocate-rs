@@ -107,8 +107,8 @@ impl Iterator for Iter<'_> {
 ///     // ...
 /// }
 /// ```
-#[derive(Clone, Debug, Deserialize, PartialEq)]
-#[cfg_attr(test, derive(serde::Serialize))]
+#[derive(Clone, Debug, serde_derive::Deserialize, PartialEq)]
+#[cfg_attr(test, derive(serde_derive::Serialize))]
 #[non_exhaustive]
 #[serde(rename_all = "PascalCase")]
 pub struct App {
@@ -192,7 +192,7 @@ macro_rules! impl_deserialize_from_u64 {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-#[cfg_attr(test, derive(serde::Serialize))]
+#[cfg_attr(test, derive(serde_derive::Serialize))]
 pub enum Universe {
     Invalid,
     Public,
@@ -219,8 +219,8 @@ impl From<u64> for Universe {
 
 impl_deserialize_from_u64!(Universe);
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
-#[cfg_attr(test, derive(serde::Serialize))]
+#[derive(Clone, Copy, Debug, serde_derive::Deserialize, PartialEq)]
+#[cfg_attr(test, derive(serde_derive::Serialize))]
 pub struct StateFlags(pub u64);
 
 impl StateFlags {
@@ -303,7 +303,7 @@ impl Iterator for ValidIter {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-#[cfg_attr(test, derive(serde::Serialize))]
+#[cfg_attr(test, derive(serde_derive::Serialize))]
 pub enum StateFlag {
     Invalid,
     Uninstalled,
@@ -377,7 +377,7 @@ fn time_as_secs_from_unix_epoch(secs: u64) -> Option<time::SystemTime> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(test, derive(serde::Serialize))]
+#[cfg_attr(test, derive(serde_derive::Serialize))]
 pub enum AllowOtherDownloadsWhileRunning {
     UseGlobalSetting,
     Allow,
@@ -399,7 +399,7 @@ impl From<u64> for AllowOtherDownloadsWhileRunning {
 impl_deserialize_from_u64!(AllowOtherDownloadsWhileRunning);
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(test, derive(serde::Serialize))]
+#[cfg_attr(test, derive(serde_derive::Serialize))]
 pub enum AutoUpdateBehavior {
     KeepUpToDate,
     OnlyUpdateOnLaunch,
@@ -421,7 +421,7 @@ impl From<u64> for AutoUpdateBehavior {
 impl_deserialize_from_u64!(AutoUpdateBehavior);
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(test, derive(serde::Serialize))]
+#[cfg_attr(test, derive(serde_derive::Serialize))]
 pub enum ScheduledAutoUpdate {
     Zero,
     Time(time::SystemTime),
@@ -444,8 +444,8 @@ impl<'de> Deserialize<'de> for ScheduledAutoUpdate {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
-#[cfg_attr(test, derive(serde::Serialize))]
+#[derive(Clone, Copy, Debug, serde_derive::Deserialize, PartialEq)]
+#[cfg_attr(test, derive(serde_derive::Serialize))]
 #[non_exhaustive]
 pub struct Depot {
     pub manifest: u64,
