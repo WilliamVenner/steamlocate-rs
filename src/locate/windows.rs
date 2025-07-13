@@ -31,5 +31,5 @@ pub fn locate_steam_dir_helper() -> Result<(PathBuf, InstallationType)> {
         .map_err(io_to_locate_err)?;
 
     let install_path = PathBuf::from(install_path_str);
-    Ok(install_path, InstallationType::WindowsStandard)
+    Ok((install_path, InstallationType::WindowsStandard))
 }

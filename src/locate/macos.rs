@@ -10,5 +10,5 @@ pub fn locate_steam_dir_helper() -> Result<(PathBuf, InstallationType)> {
 
     // Find Library/Application Support/Steam
     let install_path = home_dir.join("Library/Application Support/Steam");
-    Ok(install_path, InstallationType::MacosStandard)
+    Ok((install_path, InstallationType::MacosStandard))
 }
