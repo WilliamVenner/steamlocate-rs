@@ -225,7 +225,7 @@ impl Library {
     /// # assert_eq!(total_size, 30804429728);
     /// # Ok::<_, TestError>(())
     /// ```
-    pub fn apps(&self) -> app::Iter {
+    pub fn apps(&self) -> app::Iter<'_> {
         app::Iter::new(self)
     }
 
