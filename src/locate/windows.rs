@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use crate::Result;
+use crate::{locate::InstallationType, Result};
 
-pub fn locate_steam_dir_helper() -> Result<PathBuf> {
+pub fn locate_steam_dir_helper() -> Result<(PathBuf, InstallationType)> {
     use crate::error::{Error, LocateError};
 
     use winreg::{
@@ -31,5 +31,5 @@ pub fn locate_steam_dir_helper() -> Result<PathBuf> {
         .map_err(io_to_locate_err)?;
 
     let install_path = PathBuf::from(install_path_str);
-    Ok(install_path)
+    Ok((install_path, InstallationType::WindowsStandard))
 }

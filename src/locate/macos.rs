@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use crate::Result;
+use crate::{locate::InstallationType, Result};
 
-pub fn locate_steam_dir_helper() -> Result<PathBuf> {
+pub fn locate_steam_dir_helper() -> Result<(PathBuf, InstallationType)> {
     use crate::{error::LocateError, Error};
     // Steam's installation location is pretty easy to find on macOS, as it's always in
     // $USER/Library/Application Support
@@ -10,5 +10,5 @@ pub fn locate_steam_dir_helper() -> Result<PathBuf> {
 
     // Find Library/Application Support/Steam
     let install_path = home_dir.join("Library/Application Support/Steam");
-    Ok(install_path)
+    Ok((install_path, InstallationType::MacosStandard))
 }
