@@ -7,7 +7,7 @@ use std::{
 };
 
 use super::{temp::TempDir, TestError};
-use crate::SteamDir;
+use crate::{locate::InstallationType, SteamDir};
 
 use serde_derive::Serialize;
 
@@ -66,6 +66,7 @@ pub struct TempSteamDirBuilder {
     shortcuts: Option<SampleShortcuts>,
     libraries: Vec<TempLibrary>,
     apps: Vec<AppFile>,
+    installation_type: InstallationType,
 }
 
 impl TempSteamDirBuilder {
@@ -84,12 +85,18 @@ impl TempSteamDirBuilder {
         self
     }
 
+    pub fn installation_type(mut self, installation_type: InstallationType) -> Self {
+        self.installation_type = installation_type;
+        self
+    }
+
     // Steam dir is also a library, but is laid out slightly differently than a regular library
     pub fn finish(self) -> Result<TempSteamDir, TestError> {
         let Self {
             shortcuts,
             libraries,
             apps,
+            installation_type,
         } = self;
 
         let tmp = TempDir::new()?;
@@ -119,7 +126,7 @@ impl TempSteamDirBuilder {
             .collect();
 
         Ok(TempSteamDir {
-            steam_dir: SteamDir::from_dir(&steam_dir)?,
+            steam_dir: SteamDir::from_dir(&steam_dir, &installation_type)?,
             _tmps: tmps,
         })
     }

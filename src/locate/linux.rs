@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use crate::Result;
+use crate::{locate::InstallationType, Result};
 
-pub fn locate_steam_dir_helper() -> Result<Vec<PathBuf>> {
+pub fn locate_steam_dir_helper() -> Result<Vec<(PathBuf, InstallationType)>> {
     use std::{collections::BTreeSet, env};
 
     use crate::error::{Error, LocateError};
@@ -15,26 +15,55 @@ pub fn locate_steam_dir_helper() -> Result<Vec<PathBuf>> {
     };
 
     let mut path_deduper = BTreeSet::new();
-    let unique_paths = [
-        // Flatpak steam install directories
-        home_dir.join(".var/app/com.valvesoftware.Steam/.local/share/Steam"),
-        home_dir.join(".var/app/com.valvesoftware.Steam/.steam/steam"),
-        home_dir.join(".var/app/com.valvesoftware.Steam/.steam/root"),
-        // Standard install directories
-        home_dir.join(".local/share/Steam"),
-        home_dir.join(".steam/steam"),
-        home_dir.join(".steam/root"),
-        home_dir.join(".steam/debian-installation"),
-        // Snap steam install directories
-        snap_dir.join("steam/common/.local/share/Steam"),
-        snap_dir.join("steam/common/.steam/steam"),
-        snap_dir.join("steam/common/.steam/root"),
+    let unique_paths = vec![
+        (
+            home_dir.join(".var/app/com.valvesoftware.Steam/.local/share/Steam"),
+            InstallationType::LinuxFlatpak,
+        ),
+        (
+            home_dir.join(".var/app/com.valvesoftware.Steam/.steam/steam"),
+            InstallationType::LinuxFlatpak,
+        ),
+        (
+            home_dir.join(".var/app/com.valvesoftware.Steam/.steam/root"),
+            InstallationType::LinuxFlatpak,
+        ),
+        (
+            home_dir.join(".local/share/Steam"),
+            InstallationType::LinuxStandard,
+        ),
+        (
+            home_dir.join(".steam/steam"),
+            InstallationType::LinuxStandard,
+        ),
+        (
+            home_dir.join(".steam/root"),
+            InstallationType::LinuxStandard,
+        ),
+        (
+            home_dir.join(".steam/debian-installation"),
+            InstallationType::LinuxStandard,
+        ),
+        (
+            snap_dir.join("steam/common/.local/share/Steam"),
+            InstallationType::LinuxSnap,
+        ),
+        (
+            snap_dir.join("steam/common/.steam/steam"),
+            InstallationType::LinuxSnap,
+        ),
+        (
+            snap_dir.join("steam/common/.steam/root"),
+            InstallationType::LinuxSnap,
+        ),
     ]
     .into_iter()
-    .filter(|path| path.is_dir())
-    .filter_map(|path| {
+    .filter(|(path, _)| path.is_dir())
+    .filter_map(|(path, installation_type)| {
         let resolved_path = path.read_link().unwrap_or_else(|_| path.clone());
-        path_deduper.insert(resolved_path.clone()).then_some(path)
+        path_deduper
+            .insert(resolved_path.clone())
+            .then_some((path, installation_type))
     })
     .collect();
     Ok(unique_paths)

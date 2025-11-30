@@ -113,6 +113,7 @@ pub use crate::app::App;
 pub use crate::config::CompatTool;
 pub use crate::error::{Error, Result};
 pub use crate::library::Library;
+use crate::locate::InstallationType;
 pub use crate::shortcut::Shortcut;
 
 // Run doctests on the README too
@@ -150,6 +151,7 @@ pub struct ReadmeDoctests;
 #[derive(Clone, Debug)]
 pub struct SteamDir {
     path: PathBuf,
+    installation_type: InstallationType,
 }
 
 impl SteamDir {
@@ -163,16 +165,18 @@ impl SteamDir {
     /// [See the struct docs][Self#example] for an example
     pub fn locate() -> Result<Self> {
         let paths = locate::locate_steam_dir()?;
-        let path = paths
+        let (path, installation_type) = paths
             .first()
             .ok_or(error::Error::InvalidSteamDir(ValidationError::missing_dir()))?;
-        Self::from_dir(path)
+        Self::from_dir(path, installation_type)
     }
 
     pub fn locate_multiple() -> Result<Vec<SteamDir>> {
         let paths = locate::locate_steam_dir()?;
-        let mapped_paths: Result<Vec<SteamDir>> =
-            paths.iter().map(|item| Self::from_dir(item)).collect();
+        let mapped_paths: Result<Vec<SteamDir>> = paths
+            .iter()
+            .map(|(path, installation_type)| Self::from_dir(path, installation_type))
+            .collect();
         mapped_paths
     }
 
@@ -191,10 +195,11 @@ impl SteamDir {
     /// let steam_dir = SteamDir::locate()?;
     /// # */
     /// let steam_path = steam_dir.path();
-    /// let still_steam_dir = SteamDir::from_dir(steam_path).expect("We just located it");
+    /// let installation_type = steam_dir.installation_type();
+    /// let still_steam_dir = SteamDir::from_dir(steam_path, installation_type).expect("We just located it");
     /// assert_eq!(still_steam_dir.path(), steam_path);
     /// ```
-    pub fn from_dir(path: &Path) -> Result<Self> {
+    pub fn from_dir(path: &Path, installation_type: &InstallationType) -> Result<Self> {
         if !path.is_dir() {
             return Err(Error::validation(ValidationError::missing_dir()));
         }
@@ -203,6 +208,7 @@ impl SteamDir {
         // to determine if a steam dir has been uninstalled. Should fix all the flatpack/snap issues
         Ok(Self {
             path: path.to_owned(),
+            installation_type: installation_type.clone(),
         })
     }
 
@@ -211,6 +217,13 @@ impl SteamDir {
     /// Example: `C:\Program Files (x86)\Steam`
     pub fn path(&self) -> &Path {
         &self.path
+    }
+
+    /// Installation type for the Steam
+    ///
+    /// Mostly useful for Linux to determine what type of Steam was located (Flatpak, Snap, Standard)
+    pub fn installation_type(&self) -> &InstallationType {
+        &self.installation_type
     }
 
     pub fn library_paths(&self) -> Result<Vec<PathBuf>> {
