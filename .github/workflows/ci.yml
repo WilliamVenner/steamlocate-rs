@@ -28,6 +28,7 @@ jobs:
       - name: Commune with clippy
         run: cargo clippy --all -- -D warnings
       - name: Check formatting
+        if: matrix.toolchain == 'stable'
         run: cargo fmt --all -- --check
       - name: Run test suite
         run: cargo test
