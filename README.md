@@ -32,7 +32,7 @@ The `SteamDir` is going to be your entrypoint into _most_ parts of the API.
 After you locate it you can access related information.
 
 ```rust,ignore
-let steam_dir = steamlocate::SteamDir::locate()?;
+let steam_dir = steamlocate::locate()?;
 println!("Steam installation - {}", steam_dir.path().display());
 // ^^ prints something like `Steam installation - C:\Program Files (x86)\Steam`
 
@@ -60,7 +60,7 @@ You can iterate over all of Steam's libraries from the steam dir. Then from each
 can iterate over all of its apps.
 
 ```rust,ignore
-let steam_dir = steamlocate::SteamDir::locate()?;
+let steam_dir = steamlocate::locate()?;
 
 for library in steam_dir.libraries()? {
     let library = library?;

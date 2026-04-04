@@ -78,7 +78,7 @@ fn all_apps_get_one() -> TestResult {
 // FIXME: This should fake the steam installation now
 // #[test]
 // fn find_compatibility_tool() {
-//     let steamdir_found = SteamDir::locate();
+//     let steamdir_found = crate::locate();
 //     assert!(steamdir_found.is_some());
 
 //     let mut steamdir = steamdir_found.unwrap();

@@ -1,7 +1,7 @@
-//! Just prints all discovered shortcuts aka all non-Steam added games
+//! Prints all discovered shortcuts aka all non-Steam added games
 
 fn main() {
-    let steamdir = steamlocate::SteamDir::locate().unwrap();
+    let steamdir = steamlocate::locate().unwrap();
     println!("Shortcuts:");
     for maybe_shortcut in steamdir.shortcuts().unwrap() {
         match maybe_shortcut {

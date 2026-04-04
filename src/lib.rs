@@ -18,7 +18,7 @@
 //!
 //! ```
 //! # /*
-//! let steam_dir = steamlocate::SteamDir::locate()?;
+//! let steam_dir = steamlocate::locate()?;
 //! # */
 //! # use steamlocate::__private_tests::prelude::*;
 //! # let temp_steam_dir = expect_test_env();
@@ -52,7 +52,7 @@
 //!
 //! ```
 //! # /*
-//! let steam_dir = steamlocate::SteamDir::locate()?;
+//! let steam_dir = steamlocate::locate()?;
 //! # */
 //! # use steamlocate::__private_tests::prelude::*;
 //! # let temp_steam_dir = expect_test_env();
@@ -120,9 +120,37 @@ pub use crate::shortcut::Shortcut;
 #[cfg(doctest)]
 pub struct ReadmeDoctests;
 
+/// Attempts to locate the Steam installation directory on the system
+///
+///
+/// Uses platform specific operations to locate the Steam directory. Currently the supported
+/// platforms are Windows, MacOS, and Linux while other platforms return an
+/// [`LocateError::Unsupported`][error::LocateError::Unsupported]
+///
+/// Note: returns the first detected installation if there are multiple detected. See
+/// [`locate_all()`] for returning all detected installations
+pub fn locate() -> Result<SteamDir> {
+    let paths = locate::locate_steam_dir()?;
+    let path = paths
+        .first()
+        .ok_or(error::Error::InvalidSteamDir(ValidationError::missing_dir()))?;
+    SteamDir::from_dir(path)
+}
+
+/// Attempts to locate all Steam installation directories on the system
+///
+/// The same as [`locate()`], but returns all detected Steam installations if there are multiple
+/// (native, Flatpak, Snapcraft)
+pub fn locate_all() -> Result<Vec<SteamDir>> {
+    let paths = locate::locate_steam_dir()?;
+    let mapped_paths: Result<Vec<SteamDir>> =
+        paths.iter().map(|item| SteamDir::from_dir(item)).collect();
+    mapped_paths
+}
+
 /// The entrypoint into most of the rest of the API
 ///
-/// Use either [`SteamDir::locate()`] or [`SteamDir::from_dir()`] to create a new instance.
+/// Use either [`locate()`] or [`SteamDir::from_dir()`] to create a new instance.
 /// From there you have access to:
 ///
 /// - The Steam installation directory
@@ -140,7 +168,7 @@ pub struct ReadmeDoctests;
 /// # Example
 /// ```
 /// # /*
-/// let steam_dir = SteamDir::locate()?;
+/// let steam_dir = steamlocate::locate()?;
 /// # */
 /// # use steamlocate::__private_tests::prelude::*;
 /// # let temp_steam_dir = expect_test_env();
@@ -169,16 +197,9 @@ impl SteamDir {
         Self::from_dir(path)
     }
 
-    pub fn locate_multiple() -> Result<Vec<SteamDir>> {
-        let paths = locate::locate_steam_dir()?;
-        let mapped_paths: Result<Vec<SteamDir>> =
-            paths.iter().map(|item| Self::from_dir(item)).collect();
-        mapped_paths
-    }
-
     /// Attempt to create a [`SteamDir`] from its installation directory
     ///
-    /// When possible you should prefer using [`SteamDir::locate()`]
+    /// When possible you should prefer using [`locate()`]
     ///
     /// # Example
     ///
@@ -188,7 +209,7 @@ impl SteamDir {
     /// # let temp_steam_dir = expect_test_env();
     /// # let steam_dir = temp_steam_dir.steam_dir();
     /// # /*
-    /// let steam_dir = SteamDir::locate()?;
+    /// let steam_dir = steamlocate::locate()?;
     /// # */
     /// let steam_path = steam_dir.path();
     /// let still_steam_dir = SteamDir::from_dir(steam_path).expect("We just located it");
@@ -227,7 +248,7 @@ impl SteamDir {
     ///
     /// ```
     /// # /*
-    /// let steam_dir = SteamDir::locate()?;
+    /// let steam_dir = steamlocate::locate()?;
     /// # */
     /// # use steamlocate::__private_tests::prelude::*;
     /// # let temp_steam_dir = expect_test_env();
@@ -255,7 +276,7 @@ impl SteamDir {
     /// # let temp_steam_dir = expect_test_env();
     /// # let steam_dir = temp_steam_dir.steam_dir();
     /// # /*
-    /// let steam_dir = SteamDir::locate()?;
+    /// let steam_dir = steamlocate::locate()?;
     /// # */
     /// const WARFRAME: u32 = 230_410;
     /// let (warframe, library) = steam_dir.find_app(WARFRAME)?.unwrap();
@@ -300,7 +321,7 @@ impl SteamDir {
     /// # let temp_steam_dir: TempSteamDir = moonlighter.try_into()?;
     /// # let steam_dir = temp_steam_dir.steam_dir();
     /// # /*
-    /// let steam_dir = SteamDir::locate()?;
+    /// let steam_dir = steamlocate::locate()?;
     /// # */
     /// let mut shortcuts_iter = steam_dir.shortcuts()?;
     /// let moonlighter = shortcuts_iter.next().unwrap()?;
