@@ -1,15 +1,13 @@
 use std::path::PathBuf;
 
-use crate::Result;
+use crate::{error::LocateError, Error, Result};
+
+use winreg::{
+    enums::{HKEY_LOCAL_MACHINE, KEY_READ},
+    RegKey,
+};
 
 pub fn locate_steam_dir_helper() -> Result<PathBuf> {
-    use crate::error::{Error, LocateError};
-
-    use winreg::{
-        enums::{HKEY_LOCAL_MACHINE, KEY_READ},
-        RegKey,
-    };
-
     let io_to_locate_err = |io_err| Error::locate(LocateError::winreg(io_err));
 
     // Locating the Steam installation location is a bit more complicated on Windows
