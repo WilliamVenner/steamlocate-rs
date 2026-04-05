@@ -226,7 +226,7 @@ mod tests {
 
     #[test]
     fn sanity() {
-        let contents = include_bytes!("../tests/sample_data/shortcuts.vdf");
+        let contents = include_bytes!("../tests/assets/shortcuts.vdf");
         let shortcuts = parse_shortcuts(contents).unwrap();
         assert_eq!(
             shortcuts,
@@ -260,7 +260,7 @@ mod tests {
             [0xe89614fe02000000, 0xdb01c79902000000, 0x9d55017302000000,]
         );
 
-        let contents = include_bytes!("../tests/sample_data/shortcuts_different_key_case.vdf");
+        let contents = include_bytes!("../tests/assets/shortcuts_different_key_case.vdf");
         let shortcuts = parse_shortcuts(contents).unwrap();
         assert_eq!(
             shortcuts,
