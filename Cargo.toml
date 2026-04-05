@@ -29,13 +29,5 @@ winreg = "0.56.0"
 
 [dev-dependencies]
 insta = { version = "1.34.0", features = ["ron"] }
+# TODO: make target specific
 wasm-bindgen-test = "0.3.39"
-
-[[example]]
-name = "appmanifest"
-
-[[example]]
-name = "overview"
-
-[[example]]
-name = "shortcuts"
