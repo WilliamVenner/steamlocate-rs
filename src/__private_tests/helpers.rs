@@ -333,7 +333,7 @@ impl SampleShortcuts {
     pub const fn data(&self) -> &'static [u8] {
         match self {
             Self::JustGogMoonlighter => {
-                include_bytes!("../../tests/sample_data/shortcuts_just_gog_moonlighter.vdf")
+                include_bytes!("../../tests/assets/shortcuts_just_gog_moonlighter.vdf")
             }
         }
     }
