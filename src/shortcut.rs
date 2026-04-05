@@ -2,9 +2,7 @@
 
 use std::{
     fs, io,
-    iter::Peekable,
     path::{Path, PathBuf},
-    slice,
 };
 
 use crate::{
@@ -12,9 +10,6 @@ use crate::{
     Error, Result,
 };
 
-// TODO: refactor this to remove storing the `steam_id` and instead make it a method that
-// calculates on demand. That fixes some API issues and more directly represents the underlying
-// data. This also means that `fn new()` can be removed
 /// A non-Steam game that has been added to Steam
 ///
 /// Information is parsed from your `userdata/<user_id>/config/shortcuts.vdf` files
@@ -134,89 +129,142 @@ impl Iterator for Iter {
     }
 }
 
-/// Advances `it` until right after the matching `needle`
-///
-/// Only works if the starting byte is not used anywhere else in the needle. This works well when
-/// finding keys since the starting byte indicates the type and wouldn't be used in the key
-#[must_use]
-fn after_many_case_insensitive(it: &mut Peekable<slice::Iter<u8>>, needle: &[u8]) -> bool {
-    loop {
-        let mut needle_it = needle.iter();
-        let b = match it.next() {
-            Some(b) => b,
-            None => return false,
-        };
+fn parse_shortcuts(contents: &[u8]) -> Option<Vec<Shortcut>> {
+    let mut shortcuts = Vec::new();
+    let mut factory = ShortcutFactory::default();
 
-        let maybe_needle_b = needle_it.next();
-        if maybe_u8_eq_ignore_ascii_case(maybe_needle_b, Some(b)) {
-            loop {
-                if needle_it.len() == 0 {
-                    return true;
-                }
-
-                let maybe_b = it.peek();
-                let maybe_needle_b = needle_it.next();
-                if maybe_u8_eq_ignore_ascii_case(maybe_needle_b, maybe_b.copied()) {
-                    let _ = it.next();
-                } else {
-                    break;
+    for maybe_field_start in contents
+        .iter()
+        .enumerate()
+        .filter(|(_, b)| [1, 2].contains(b))
+        .map(|(i, _)| i)
+    {
+        let kind = contents[maybe_field_start];
+        let null_at = contents[1 + maybe_field_start..]
+            .iter()
+            .enumerate()
+            .filter(|(_, &b)| b == 0)
+            .map(|(i, _)| i)
+            .next()?;
+        let (field, the_rest) = contents[1 + maybe_field_start..].split_at(null_at);
+        let the_rest = &the_rest[1..];
+        match kind {
+            1 if field.eq_ignore_ascii_case(b"appname") => {
+                let name = the_rest.split(|&b| b == 0).next()?;
+                let name = String::from_utf8_lossy(name).into_owned();
+                if let Some(res) = factory.set_app_name(name) {
+                    match res {
+                        Ok(shortcut) => shortcuts.push(shortcut),
+                        Err(_) => return None,
+                    }
                 }
             }
+            1 if field.eq_ignore_ascii_case(b"exe") => {
+                let exe = the_rest.split(|&b| b == 0).next()?;
+                let exe = String::from_utf8_lossy(exe).into_owned();
+                if let Some(res) = factory.set_executable(exe) {
+                    match res {
+                        Ok(shortcut) => shortcuts.push(shortcut),
+                        Err(_) => return None,
+                    }
+                }
+            }
+            1 if field.eq_ignore_ascii_case(b"startdir") => {
+                let dir = the_rest.split(|&b| b == 0).next()?;
+                let dir = String::from_utf8_lossy(dir).into_owned();
+                if let Some(res) = factory.set_start_dir(dir) {
+                    match res {
+                        Ok(shortcut) => shortcuts.push(shortcut),
+                        Err(_) => return None,
+                    }
+                }
+            }
+            2 if field.eq_ignore_ascii_case(b"appid") => {
+                let bytes = the_rest.get(..4)?.try_into().unwrap();
+                let app_id = u32::from_le_bytes(bytes);
+                if let Some(res) = factory.set_app_id(app_id) {
+                    match res {
+                        Ok(shortcut) => shortcuts.push(shortcut),
+                        Err(_) => return None,
+                    }
+                }
+            }
+            _ => {}
         }
     }
+
+    // ensure we don't have a partial shortcut lingering
+    (factory == ShortcutFactory::default()).then_some(shortcuts)
 }
 
-fn maybe_u8_eq_ignore_ascii_case(maybe_b1: Option<&u8>, maybe_b2: Option<&u8>) -> bool {
-    maybe_b1
-        .zip(maybe_b2)
-        .map(|(b1, b2)| b1.eq_ignore_ascii_case(b2))
-        .unwrap_or_default()
+struct TooMany;
+
+type FieldResult = Option<std::result::Result<Shortcut, TooMany>>;
+
+#[derive(Debug, Default, PartialEq, Eq)]
+struct ShortcutFactory {
+    app_id: Option<u32>,
+    app_name: Option<String>,
+    executable: Option<String>,
+    start_dir: Option<String>,
 }
 
-fn parse_value_str(it: &mut Peekable<slice::Iter<u8>>) -> Option<String> {
-    let mut buff = Vec::new();
-    loop {
-        let b = it.next()?;
-        if *b == 0x00 {
-            break Some(String::from_utf8_lossy(&buff).into_owned());
+impl ShortcutFactory {
+    fn set_app_id(&mut self, id: u32) -> FieldResult {
+        let was = self.app_id.replace(id);
+        if was.is_some() {
+            Some(Err(TooMany))
+        } else {
+            self.finish().map(Ok)
         }
-
-        buff.push(*b);
     }
-}
 
-fn parse_value_u32(it: &mut Peekable<slice::Iter<u8>>) -> Option<u32> {
-    let bytes = [*it.next()?, *it.next()?, *it.next()?, *it.next()?];
-    Some(u32::from_le_bytes(bytes))
-}
-
-fn parse_shortcuts(contents: &[u8]) -> Option<Vec<Shortcut>> {
-    let mut it = contents.iter().peekable();
-    let mut shortcuts = Vec::new();
-
-    loop {
-        if !after_many_case_insensitive(&mut it, b"\x02appid\x00") {
-            return Some(shortcuts);
+    fn set_app_name(&mut self, name: String) -> FieldResult {
+        let was = self.app_name.replace(name);
+        if was.is_some() {
+            Some(Err(TooMany))
+        } else {
+            self.finish().map(Ok)
         }
-        let app_id = parse_value_u32(&mut it)?;
+    }
 
-        if !after_many_case_insensitive(&mut it, b"\x01AppName\x00") {
-            return None;
+    fn set_executable(&mut self, exe: String) -> FieldResult {
+        let was = self.executable.replace(exe);
+        if was.is_some() {
+            Some(Err(TooMany))
+        } else {
+            self.finish().map(Ok)
         }
-        let app_name = parse_value_str(&mut it)?;
+    }
 
-        if !after_many_case_insensitive(&mut it, b"\x01Exe\x00") {
-            return None;
+    fn set_start_dir(&mut self, dir: String) -> FieldResult {
+        let was = self.start_dir.replace(dir);
+        if was.is_some() {
+            Some(Err(TooMany))
+        } else {
+            self.finish().map(Ok)
         }
-        let executable = parse_value_str(&mut it)?;
+    }
 
-        if !after_many_case_insensitive(&mut it, b"\x01StartDir\x00") {
-            return None;
+    fn finish(&mut self) -> Option<Shortcut> {
+        match self {
+            Self {
+                app_id: Some(app_id),
+                app_name: Some(app_name),
+                executable: Some(executable),
+                start_dir: Some(start_dir),
+            } => {
+                let shortcut = Shortcut {
+                    app_id: *app_id,
+                    app_name: app_name.to_owned(),
+                    executable: executable.to_owned(),
+                    start_dir: start_dir.to_owned(),
+                };
+                std::mem::take(self);
+                Some(shortcut)
+            }
+            _ => None,
         }
-        let start_dir = parse_value_str(&mut it)?;
-
-        let shortcut = Shortcut::new(app_id, app_name, executable, start_dir);
-        shortcuts.push(shortcut);
     }
 }
 
@@ -259,7 +307,11 @@ mod tests {
             steam_ids,
             [0xe89614fe02000000, 0xdb01c79902000000, 0x9d55017302000000,]
         );
+    }
 
+    /// Shortcut fields parse regardless of case
+    #[test]
+    fn different_case() {
         let contents = include_bytes!("../tests/assets/shortcuts_different_key_case.vdf");
         let shortcuts = parse_shortcuts(contents).unwrap();
         assert_eq!(
@@ -269,6 +321,22 @@ mod tests {
                 app_name: "Second Life".into(),
                 executable: "\"/Applications/Second Life Viewer.app\"".into(),
                 start_dir: "\"/Applications/\"".into(),
+            }]
+        );
+    }
+
+    /// Shortcuts fields can be in an arbitrary order
+    #[test]
+    fn different_order() {
+        let contents = include_bytes!("../tests/assets/shortcuts_different_order.vdf");
+        let shortcuts = parse_shortcuts(contents).unwrap();
+        assert_eq!(
+            shortcuts,
+            vec![Shortcut {
+                app_id: 2797129511,
+                app_name: "The Wolf Among Us".into(),
+                executable: "\"/opt/Heroic/heroic\"".into(),
+                start_dir: "\"/home/spencer\"".into(),
             }]
         );
     }
