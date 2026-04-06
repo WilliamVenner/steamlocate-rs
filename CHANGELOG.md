@@ -1,3 +1,50 @@
+# 2.1.0
+
+The headline feature of this release is the ability to locate _all_ detected
+Steam installations instead of only returning the first one with the addition of
+`steamlocate::locate_all()`
+
+## Features
+
+- Allow returning all detected Steam installations with `locate_all()` [#64]
+- Add debian steam installation path [#94]
+- Move locate functions to crate root [#107]
+
+## Fix
+
+- Parse shortcut fields regardless of order [#111]
+
+## Dependenciesa
+
+- Update GitHub actions [#100] [#101]
+- Update `winreg` 0.55.0 -> 0.56.0 [#108]
+- Update `Cargo.lock` deps [#110]
+
+## Internal
+
+- Placate clippy [#95] [#98]
+- Depend on `serde_derive` and `serde` separately [#96]
+- Separate locate code by platform [#99]
+- Replace `home` crate with `std::env::home_dir` [#106]
+- Add CI workflow for publishing releases [`08901a8`]
+- Group all test assets together [#109]
+
+[#64]: https://github.com/WilliamVenner/steamlocate-rs/pull/64
+[#94]: https://github.com/WilliamVenner/steamlocate-rs/pull/94
+[#95]: https://github.com/WilliamVenner/steamlocate-rs/pull/95
+[#96]: https://github.com/WilliamVenner/steamlocate-rs/pull/96
+[#98]: https://github.com/WilliamVenner/steamlocate-rs/pull/98
+[#99]: https://github.com/WilliamVenner/steamlocate-rs/pull/99
+[#100]: https://github.com/WilliamVenner/steamlocate-rs/pull/100
+[#101]: https://github.com/WilliamVenner/steamlocate-rs/pull/101
+[#106]: https://github.com/WilliamVenner/steamlocate-rs/pull/106
+[#107]: https://github.com/WilliamVenner/steamlocate-rs/pull/107
+[#108]: https://github.com/WilliamVenner/steamlocate-rs/pull/108
+[#109]: https://github.com/WilliamVenner/steamlocate-rs/pull/109
+[#110]: https://github.com/WilliamVenner/steamlocate-rs/pull/110
+[#111]: https://github.com/WilliamVenner/steamlocate-rs/pull/111
+[`08901a8`]: https://github.com/WilliamVenner/steamlocate-rs/commit/08901a8afe3267faa61b9811db1b1acd3594428b
+
 # 2.0.1
 
 Just a small release to keep things up to date
