@@ -1,5 +1,5 @@
-use steamlocate::Error;
 use steamlocate::__private_tests::prelude::*;
+use steamlocate::Error;
 
 static GMOD_ID: u32 = SampleApp::GarrysMod.id();
 
