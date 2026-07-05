@@ -27,7 +27,7 @@ pub fn locate_steam_dir_helper() -> Result<Vec<PathBuf>> {
         snap_dir.join("steam/common/.steam/root"),
     ]
     .into_iter()
-    .filter(|path| path.is_dir())
+    .filter(|path| path.join("steamapps").is_dir())
     .filter_map(|path| {
         let resolved_path = path.read_link().unwrap_or_else(|_| path.clone());
         path_deduper.insert(resolved_path.clone()).then_some(path)
