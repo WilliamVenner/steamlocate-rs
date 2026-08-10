@@ -449,7 +449,15 @@ impl<'de> Deserialize<'de> for ScheduledAutoUpdate {
 #[non_exhaustive]
 pub struct Depot {
     pub manifest: u64,
+
+    /// The size of the depot.
+    ///
+    /// Will be set to `0` if the field is absent.
+    // This should really be Option<u64>, but fixing it would be a breaking change.
+    // https://github.com/WilliamVenner/steamlocate-rs/issues/116
+    #[serde(default)]
     pub size: u64,
+
     #[serde(rename = "dlcappid")]
     pub dlc_app_id: Option<u64>,
 }
