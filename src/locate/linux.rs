@@ -5,10 +5,9 @@ use crate::{error::LocateError, Error, Result};
 pub fn locate_steam_dir_helper() -> Result<Vec<PathBuf>> {
     // Steam's installation location is pretty easy to find on Linux, too, thanks to the symlink in $USER
     let home_dir = env::home_dir().ok_or_else(|| Error::locate(LocateError::no_home()))?;
-    let snap_dir = match env::var("SNAP_USER_DATA") {
-        Ok(snap_dir) => PathBuf::from(snap_dir),
-        Err(_) => home_dir.join("snap"),
-    };
+    let snap_dir = env::var_os("SNAP_USER_DATA")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| home_dir.join("snap"));
 
     let mut path_deduper = BTreeSet::new();
     let unique_paths = [
