@@ -8,6 +8,9 @@ pub fn locate_steam_dir_helper() -> Result<Vec<PathBuf>> {
     let snap_dir = env::var_os("SNAP_USER_DATA")
         .map(PathBuf::from)
         .unwrap_or_else(|| home_dir.join("snap"));
+    let xdg_data_home = env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| home_dir.join(".local/share"));
 
     let mut path_deduper = BTreeSet::new();
     let unique_paths = [
@@ -16,7 +19,7 @@ pub fn locate_steam_dir_helper() -> Result<Vec<PathBuf>> {
         home_dir.join(".var/app/com.valvesoftware.Steam/.steam/steam"),
         home_dir.join(".var/app/com.valvesoftware.Steam/.steam/root"),
         // Standard install directories
-        home_dir.join(".local/share/Steam"),
+        xdg_data_home.join("Steam"),
         home_dir.join(".steam/steam"),
         home_dir.join(".steam/root"),
         home_dir.join(".steam/debian-installation"),
