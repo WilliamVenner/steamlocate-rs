@@ -1,6 +1,6 @@
 [package]
 name = "steamlocate"
-version = "2.1.0"
+version = "2.1.1"
 authors = [
     "William Venner <william@venner.io>",
     "Cosmic <CosmicHorrorDev@pm.me>",
@@ -11,7 +11,7 @@ license = "MIT"
 description = "Crate for locating Steam game installation directories (and Steam itself!)"
 keywords = ["steam", "vdf", "appmanifest", "directory", "steamapps"]
 categories = ["config", "filesystem"]
-rust-version = "1.70.0"
+rust-version = "1.83.0"
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--cfg", "docsrs"]

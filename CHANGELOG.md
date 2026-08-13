@@ -1,3 +1,37 @@
+# 2.1.1
+
+## Fix
+
+- Improve `SteamDir` location validation [#104]
+- Allow non-utf8 `$SNAP_USER_DATA` paths [`497abbb`]
+- Look for Steam in `$XDG_DATA_HOME` on Linux [`72d4f60`]
+- Default `app::Depot::size` to zero if missing [#118]
+
+## Internal
+
+- Update CI actions [#113]
+- Match latest `rustfmt` formatting [#114]
+- `wasm-bindgen-test` only needed on Wasm [#115]
+
+## Contributors
+
+This release made possible thanks to the following contributors 💖
+
+- [@CosmicHorrorDev]
+- [@FelipeTJ]
+- [@MonterraByte]
+
+[#104]: https://github.com/WilliamVenner/steamlocate-rs/pull/104
+[#113]: https://github.com/WilliamVenner/steamlocate-rs/pull/113
+[#114]: https://github.com/WilliamVenner/steamlocate-rs/pull/114
+[#115]: https://github.com/WilliamVenner/steamlocate-rs/pull/115
+[#118]: https://github.com/WilliamVenner/steamlocate-rs/pull/118
+[@CosmicHorrorDev]: https://github.com/CosmicHorrorDev
+[@FelipeTJ]: https://github.com/FelipeTJ
+[@MonterraByte]: https://github.com/MonterraByte
+[`497abbb`]: https://github.com/WilliamVenner/steamlocate-rs/commit/497abbb2be323644013cf3d1476078dea67c1e92
+[`72d4f60`]: https://github.com/WilliamVenner/steamlocate-rs/commit/72d4f60f5fb6c013601e231d4c45a6187a8cf0ce
+
 # 2.1.0
 
 The headline feature of this release is the ability to locate _all_ detected
