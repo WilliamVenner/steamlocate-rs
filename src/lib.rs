@@ -140,7 +140,7 @@ pub fn locate() -> Result<SteamDir> {
 /// Attempts to locate all Steam installation directories on the system
 ///
 /// The same as [`locate()`], but returns all detected Steam installations if there are multiple
-/// (native, Flatpak, Snapcraft)
+/// (native, Flatpak, Snapcraft, CrossOver)
 pub fn locate_all() -> Result<Vec<SteamDir>> {
     let paths = locate::locate_steam_dir()?;
     let mapped_paths: Result<Vec<SteamDir>> =
@@ -236,7 +236,10 @@ impl SteamDir {
 
     pub fn library_paths(&self) -> Result<Vec<PathBuf>> {
         let libraryfolders_vdf = self.path.join("steamapps").join("libraryfolders.vdf");
-        library::parse_library_paths(&libraryfolders_vdf)
+        let paths = library::parse_library_paths(&libraryfolders_vdf)?;
+        #[cfg(target_os = "macos")]
+        let paths = locate::resolve_crossover_library_paths(&self.path, paths);
+        Ok(paths)
     }
 
     /// Returns an [`Iterator`] over all the [`Library`]s believed to be part of this installation

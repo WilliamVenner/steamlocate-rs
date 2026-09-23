@@ -14,12 +14,14 @@ use crate::locate::windows::locate_steam_dir_helper;
 mod macos;
 #[cfg(target_os = "macos")]
 use crate::locate::macos::locate_steam_dir_helper;
+#[cfg(target_os = "macos")]
+pub(crate) use crate::locate::macos::resolve_crossover_library_paths;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 pub fn locate_steam_dir() -> Result<Vec<std::path::PathBuf>> {
     locate_steam_dir_helper()
 }
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
 pub fn locate_steam_dir() -> Result<Vec<std::path::PathBuf>> {
     locate_steam_dir_helper().map(|path| vec![path])
 }
